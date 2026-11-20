@@ -29,7 +29,7 @@ function initial(): State {
     settings: { shopName: '', currency: 'EGP', lang: prefs.lang ?? 'ar' },
     currentUserId: '',
     signedIn: false,
-    customerId: null,
+    waiting: 0,
     notices: [],
   }
 }
@@ -97,7 +97,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const sync = async () => {
       const who = await resolveSession()
-      local({ type: 'session', staffId: who?.staffId ?? null, customerId: who?.customerId ?? null })
+      local({ type: 'session', staffId: who?.staffId ?? null })
       await reload()
     }
     const { data } = supabase.auth.onAuthStateChange((event) => {

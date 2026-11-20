@@ -19,6 +19,8 @@ export type Action =
       now: string
     }
   | { type: 'complete' | 'release'; seatId: string; now: string }
+  /** Undo of a Done: the completed visit goes back in progress on its seat. */
+  | { type: 'reopen'; visitId: string }
   | { type: 'setExpectNext'; seatId: string; value: boolean }
   | { type: 'reserve' | 'cancelReservation' | 'outOfService' | 'restore'; seatId: string }
   | { type: 'waitingBump'; delta: 1 | -1 }
@@ -114,6 +116,12 @@ export function reducer(s: State, a: Action): State {
       // Completing keeps the seat held when another customer is expected; releasing always frees it.
       const status = done && visit?.expectNext ? 'reserved' : 'available'
       return notice(setSeat(next, seat.id, { status, visitId: undefined, since: undefined }), done ? 'n.completed' : 'n.released', seatParam)
+    }
+    case 'reopen': {
+      const v = s.visits.find((x) => x.id === a.visitId)
+      const at = v && s.seats.find((x) => x.id === v.seatId)
+      if (!v || v.status !== 'completed' || !at || (at.status !== 'available' && at.status !== 'reserved')) return s
+      return setSeat(setVisit(s, v.id, { status: 'in_progress', endedAt: undefined }), at.id, { status: 'occupied', visitId: v.id, since: v.startedAt })
     }
     case 'setExpectNext':
       return seat?.status === 'occupied' ? setVisit(s, seat.visitId, { expectNext: a.value }) : s

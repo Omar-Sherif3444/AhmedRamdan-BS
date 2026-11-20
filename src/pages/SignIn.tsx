@@ -1,18 +1,16 @@
 import { cloneElement, useRef, useState, type FormEvent, type ReactElement, type ReactNode } from 'react'
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Phone, UserRound } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, UserRound } from 'lucide-react'
 import { useStore } from '../store'
-import { signIn, signUpCustomer } from '../lib/api'
+import { signIn } from '../lib/api'
 
-const PHONE = /^\+?[\d\s-]{7,15}$/
 
-/** Sign-in card adapted from the "sign-in-card-2" design: 3D tilt, glass card, light beams, in the site's theme. */
+/** Staff-only sign-in (admin and front desk); customers have no accounts. Card adapted from the "sign-in-card-2" design: 3D tilt, glass card, light beams, in the site's theme. */
 export default function SignIn() {
   const { state, i18n } = useStore()
   const { t } = i18n
-  const [signUp, setSignUp] = useState(false)
-  const [f, setF] = useState({ name: '', login: '', password: '' })
+  const [f, setF] = useState({ login: '', password: '' })
   const [show, setShow] = useState(false)
-  const [errors, setErrors] = useState<{ name?: string; login?: string; password?: string }>({})
+  const [errors, setErrors] = useState<{ login?: string; password?: string }>({})
   const [error, setError] = useState('')
   const [hint, setHint] = useState('')
   const [busy, setBusy] = useState(false)
@@ -37,19 +35,18 @@ export default function SignIn() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const errs: typeof errors = {}
-    if (signUp && f.name.trim().length < 2) errs.name = t('err.name')
-    if (signUp ? !PHONE.test(f.login.trim()) : !f.login.trim()) errs.login = t(signUp ? 'err.phone' : 'err.required')
-    if (signUp ? f.password.length < 6 : !f.password) errs.password = t(signUp ? 'auth.passwordShort' : 'err.required')
+    if (!f.login.trim()) errs.login = t('err.required')
+    if (!f.password) errs.password = t('err.required')
     setErrors(errs)
     if (Object.keys(errs).length) return
 
     setBusy(true)
-    const r = signUp ? await signUpCustomer(f.name, f.login, f.password) : await signIn(f.login, f.password)
+    const r = await signIn(f.login, f.password)
     setBusy(false)
     if ('error' in r) return setError(t(r.error))
-    // The credentials decide where to go: owner to the shop analysis, employees to the floor, customers home.
+    // The admin lands on the shop analysis, the front desk on its one screen.
     // The store picks up the new session from Supabase and switches views.
-    location.hash = r.owner ? '#/dashboard' : r.staffId ? '#/floor' : '#/'
+    location.hash = r.owner ? '#/dashboard' : '#/op'
   }
 
   const Next = i18n.dir === 'rtl' ? ArrowLeft : ArrowRight
@@ -72,18 +69,13 @@ export default function SignIn() {
           <div className="auth-glass">
             <header className="auth-head">
               <img className="auth-logo" src="/logo.png" alt="" width={56} height={56} />
-              <h1>{t(signUp ? 'auth.createTitle' : 'auth.welcome')}</h1>
+              <h1>{t('auth.welcome')}</h1>
               <p className="muted small">{t('auth.sub', { shop: state.settings.shopName })}</p>
             </header>
 
             <form className="form" onSubmit={submit} noValidate>
-              {signUp && (
-                <AuthField icon={<UserRound size={16} />} label={t('auth.name')} error={errors.name}>
-                  <input autoComplete="name" value={f.name} onChange={(e) => set({ name: e.target.value })} />
-                </AuthField>
-              )}
-              <AuthField icon={signUp ? <Phone size={16} /> : <UserRound size={16} />} label={t(signUp ? 'auth.phone' : 'auth.id')} error={errors.login}>
-                <input type={signUp ? 'tel' : 'text'} dir="ltr" autoComplete={signUp ? 'tel' : 'username'} value={f.login} onChange={(e) => set({ login: e.target.value })} />
+              <AuthField icon={<UserRound size={16} />} label={t('auth.id')} error={errors.login}>
+                <input type="text" dir="ltr" autoComplete="username" value={f.login} onChange={(e) => set({ login: e.target.value })} />
               </AuthField>
               <AuthField
                 icon={<Lock size={16} />}
@@ -98,17 +90,15 @@ export default function SignIn() {
                 <input
                   type={show ? 'text' : 'password'}
                   dir="ltr"
-                  autoComplete={signUp ? 'new-password' : 'current-password'}
+                  autoComplete="current-password"
                   value={f.password}
                   onChange={(e) => set({ password: e.target.value })}
                 />
               </AuthField>
 
-              {!signUp && (
-                <button type="button" className="link small auth-forgot" onClick={() => setHint(t('auth.forgotHint'))}>
-                  {t('auth.forgot')}
-                </button>
-              )}
+              <button type="button" className="link small auth-forgot" onClick={() => setHint(t('auth.forgotHint'))}>
+                {t('auth.forgot')}
+              </button>
               {hint && <p className="muted small">{hint}</p>}
               {error && (
                 <p className="auth-error" role="alert">
@@ -117,24 +107,10 @@ export default function SignIn() {
               )}
 
               <button type="submit" className="btn primary auth-submit" disabled={busy} aria-busy={busy}>
-                {busy ? t('auth.signingIn') : t(signUp ? 'auth.create' : 'auth.signIn')} {!busy && <Next size={16} aria-hidden />}
+                {busy ? t('auth.signingIn') : t('auth.signIn')} {!busy && <Next size={16} aria-hidden />}
               </button>
             </form>
 
-            <p className="auth-switch small">
-              {t(signUp ? 'auth.haveAccount' : 'auth.noAccount')}{' '}
-              <button
-                type="button"
-                className="link"
-                onClick={() => {
-                  setSignUp(!signUp)
-                  setErrors({})
-                  setError('')
-                }}
-              >
-                {t(signUp ? 'auth.signIn' : 'auth.create')}
-              </button>
-            </p>
           </div>
         </div>
 

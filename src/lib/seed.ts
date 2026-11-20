@@ -20,11 +20,11 @@ export function seed(now = new Date()): Data {
   const iso = (d: Date) => d.toISOString()
 
   const employees: Employee[] = [
-    { id: 'e1', name: 'كريم منصور', role: 'owner', phone: '01001234567', active: true, joinedAt: '2021-03-01', email: 'owner@example.com', daysOff: [5], dailyWage: 200 },
+    { id: 'e1', name: 'كريم منصور', role: 'admin', phone: '01001234567', active: true, joinedAt: '2021-03-01', email: 'owner@example.com', daysOff: [5], dailyWage: 200 },
     { id: 'e2', name: 'محمود السيد', role: 'barber', phone: '01112345678', active: true, joinedAt: '2022-01-15', email: 'mahmoud@example.com', daysOff: [5], dailyWage: 200 },
     { id: 'e3', name: 'يوسف عادل', role: 'barber', phone: '01223456789', active: true, joinedAt: '2023-06-10', email: 'youssef@example.com', daysOff: [5], dailyWage: 200 },
     { id: 'e4', name: 'عمر حسن', role: 'barber', phone: '01534567890', active: true, joinedAt: '2024-02-01', email: 'omar@example.com', daysOff: [5], dailyWage: 200 },
-    { id: 'e5', name: 'سارة فتحي', role: 'receptionist', phone: '01045678901', active: true, joinedAt: '2024-09-20', email: 'sara@example.com', daysOff: [5], dailyWage: 200 },
+    { id: 'e5', name: 'سارة فتحي', role: 'operator', phone: '01045678901', active: true, joinedAt: '2024-09-20', email: 'sara@example.com', daysOff: [5], dailyWage: 200 },
     { id: 'e6', name: 'حسام نبيل', role: 'barber', phone: '01156789012', active: false, joinedAt: '2022-05-05', email: 'hossam@example.com', daysOff: [5], dailyWage: 200 },
   ]
   const services: Service[] = [
@@ -48,7 +48,7 @@ export function seed(now = new Date()): Data {
     createdAt: iso(addDays(now, -90)),
   }))
 
-  const staff = employees.filter((e) => e.role !== 'receptionist' && e.active)
+  const staff = employees.filter((e) => e.role === 'barber' && e.active)
   const formerStaff = employees.find((e) => !e.active)!
   const hourWeights = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3, 4, 4, 5, 6, 8, 9, 9, 7, 5, 3]
   const pickHour = () => {
@@ -76,6 +76,7 @@ export function seed(now = new Date()): Data {
         employeeId: employee.id,
         seatId: r() < 0.85 ? `c${1 + Math.floor(r() * 4)}` : `s${1 + Math.floor(r() * 3)}`,
         serviceId: service.id,
+        serviceIds: [service.id],
         amount: service.price + (r() < 0.2 ? 10 * Math.ceil(r() * 3) : 0),
         method: method(),
         status: cancelled ? 'cancelled' : 'completed',
@@ -96,6 +97,7 @@ export function seed(now = new Date()): Data {
       employeeId: pick(staff).id,
       seatId,
       serviceId: service.id,
+      serviceIds: [service.id],
       amount: service.price,
       method: 'cash',
       status: 'in_progress',
@@ -108,5 +110,5 @@ export function seed(now = new Date()): Data {
   seats.find((s) => s.id === 's3')!.status = 'reserved'
   seats.find((s) => s.id === 'c4')!.status = 'out_of_service'
 
-  return { seats, employees, customers, services, visits, expenses: [], absences: [], holidays: [], wages: [], deductions: [] }
+  return { seats, employees, customers, services, visits, expenses: [], absences: [], holidays: [], wages: [], deductions: [], waiting: 0 }
 }

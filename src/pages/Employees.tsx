@@ -8,17 +8,66 @@ import { Field, Modal, VisitBadge, initials } from '../components/ui'
 import { useTxRows } from './Transactions'
 import type { Employee, Role } from '../types'
 
-const ROLES: Role[] = ['owner', 'barber', 'receptionist']
 const PHONE = /^\+?[\d\s-]{7,15}$/
 
 export default function Employees() {
   const { state, dispatch, i18n } = useStore()
   const { t } = i18n
   const [profile, setProfile] = useState<string | null>(null)
-  const [editing, setEditing] = useState<Employee | 'new' | null>(null)
+  // A new record is created as one of the two kinds the admin manages; the admin account itself is never created here.
+  const [editing, setEditing] = useState<Employee | 'operator' | 'barber' | null>(null)
 
   const stats = useMemo(() => new Map(state.employees.map((e) => [e.id, summary(state.visits.filter((v) => v.employeeId === e.id))])), [state.employees, state.visits])
   const shown = state.employees.find((e) => e.id === profile)
+  const accounts = state.employees.filter((e) => e.role !== 'barber')
+  const barbers = state.employees.filter((e) => e.role === 'barber')
+  const card = (e: Employee) => {
+    const s = stats.get(e.id)!
+    const locked = e.role === 'admin' || e.id === state.currentUserId
+    return (
+      <article key={e.id} className={e.active ? 'emp card' : 'emp card inactive'}>
+        <button className="emp-head" onClick={() => setProfile(e.id)}>
+          <span className="avatar lg" aria-hidden>
+            {initials(e.name)}
+          </span>
+          <span>
+            <strong className="block">{e.name}</strong>
+            <span className="muted small">{t(`role.${e.role}`)}</span>
+          </span>
+        </button>
+        <span className={e.active ? 'badge v-completed' : 'badge v-cancelled'}>{e.active ? t('c.active') : t('c.inactive')}</span>
+        <dl className="emp-stats">
+          <div>
+            <dt>{t('em.visits')}</dt>
+            <dd>{i18n.num(s.visits)}</dd>
+          </div>
+          <div>
+            <dt>{t('em.revenue')}</dt>
+            <dd>{i18n.money(s.revenue)}</dd>
+          </div>
+          {e.role !== 'admin' && (
+            <div>
+              <dt>{t('py.dailyWage')}</dt>
+              <dd>{e.dailyWage !== undefined ? i18n.money(e.dailyWage) : t('em.noWage')}</dd>
+            </div>
+          )}
+        </dl>
+        <div className="actions">
+          <button className="btn ghost" onClick={() => setEditing(e)}>
+            <Pencil size={15} aria-hidden /> {t('c.edit')}
+          </button>
+          <button
+            className="btn ghost"
+            onClick={() => dispatch({ type: 'toggleEmployee', id: e.id })}
+            disabled={locked}
+            title={locked ? t('em.locked') : undefined}
+          >
+            <Power size={15} aria-hidden /> {e.active ? t('em.deactivate') : t('em.activate')}
+          </button>
+        </div>
+      </article>
+    )
+  }
 
   return (
     <div className="stack">
@@ -26,65 +75,29 @@ export default function Employees() {
         <p className="muted small">
           <Info size={14} aria-hidden /> {t('em.note')}
         </p>
-        <button className="btn primary" onClick={() => setEditing('new')}>
-          <Plus size={16} aria-hidden /> {t('em.add')}
+        <button className="btn primary" onClick={() => setEditing('operator')}>
+          <Plus size={16} aria-hidden /> {t('em.addOperator')}
         </button>
       </div>
-      <div className="emp-grid">
-        {state.employees.map((e) => {
-          const s = stats.get(e.id)!
-          const locked = e.role === 'owner' || e.id === state.currentUserId
-          return (
-            <article key={e.id} className={e.active ? 'emp card' : 'emp card inactive'}>
-              <button className="emp-head" onClick={() => setProfile(e.id)}>
-                <span className="avatar lg" aria-hidden>
-                  {initials(e.name)}
-                </span>
-                <span>
-                  <strong className="block">{e.name}</strong>
-                  <span className="muted small">{t(`role.${e.role}`)}</span>
-                </span>
-              </button>
-              <span className={e.active ? 'badge v-completed' : 'badge v-cancelled'}>{e.active ? t('c.active') : t('c.inactive')}</span>
-              <dl className="emp-stats">
-                <div>
-                  <dt>{t('em.visits')}</dt>
-                  <dd>{i18n.num(s.visits)}</dd>
-                </div>
-                <div>
-                  <dt>{t('em.revenue')}</dt>
-                  <dd>{i18n.money(s.revenue)}</dd>
-                </div>
-                {e.role !== 'owner' && (
-                  <div>
-                    <dt>{t('py.dailyWage')}</dt>
-                    <dd>{e.dailyWage !== undefined ? i18n.money(e.dailyWage) : t('em.noWage')}</dd>
-                  </div>
-                )}
-              </dl>
-              <div className="actions">
-                <button className="btn ghost" onClick={() => setEditing(e)}>
-                  <Pencil size={15} aria-hidden /> {t('c.edit')}
-                </button>
-                <button
-                  className="btn ghost"
-                  onClick={() => dispatch({ type: 'toggleEmployee', id: e.id })}
-                  disabled={locked}
-                  title={locked ? t('em.locked') : undefined}
-                >
-                  <Power size={15} aria-hidden /> {e.active ? t('em.deactivate') : t('em.activate')}
-                </button>
-              </div>
-            </article>
-          )
-        })}
+      <h2>{t('em.accounts')}</h2>
+      <div className="emp-grid">{accounts.map(card)}</div>
+
+      <div className="toolbar">
+        <p className="muted small">
+          <Info size={14} aria-hidden /> {t('em.barberNote')}
+        </p>
+        <button className="btn primary" onClick={() => setEditing('barber')}>
+          <Plus size={16} aria-hidden /> {t('em.addBarber')}
+        </button>
       </div>
+      <h2>{t('em.barbers')}</h2>
+      <div className="emp-grid">{barbers.map(card)}</div>
 
       <Modal open={!!shown} onClose={() => setProfile(null)} title={shown?.name ?? ''} wide>
         {shown && <Profile employee={shown} />}
       </Modal>
-      <Modal open={!!editing} onClose={() => setEditing(null)} title={editing === 'new' ? t('em.add') : t('em.edit')}>
-        {editing && <EmployeeForm employee={editing === 'new' ? undefined : editing} onDone={() => setEditing(null)} />}
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={editing === 'operator' ? t('em.addOperator') : editing === 'barber' ? t('em.addBarber') : t('em.edit')}>
+        {editing && <EmployeeForm employee={typeof editing === 'string' ? undefined : editing} role={typeof editing === 'string' ? editing : editing.role} onDone={() => setEditing(null)} />}
       </Modal>
     </div>
   )
@@ -115,15 +128,17 @@ function Profile({ employee }: { employee: Employee }) {
           <dt>{t('c.phone')}</dt>
           <dd dir="ltr">{employee.phone || t('c.none')}</dd>
         </div>
-        <div>
-          <dt>{t('em.email')}</dt>
-          <dd dir="ltr">{employee.email}</dd>
-        </div>
+        {employee.role !== 'barber' && (
+          <div>
+            <dt>{t('em.email')}</dt>
+            <dd dir="ltr">{employee.email}</dd>
+          </div>
+        )}
         <div>
           <dt>{t('em.startDate')}</dt>
           <dd>{i18n.day(employee.joinedAt)}</dd>
         </div>
-        {employee.role !== 'owner' && (
+        {employee.role !== 'admin' && (
           <>
             <div>
               <dt>{t('py.dailyWage')}</dt>
@@ -182,13 +197,12 @@ function Profile({ employee }: { employee: Employee }) {
   )
 }
 
-function EmployeeForm({ employee, onDone }: { employee?: Employee; onDone: () => void }) {
+function EmployeeForm({ employee, role, onDone }: { employee?: Employee; role: Role; onDone: () => void }) {
   const { state, dispatch, toast, i18n } = useStore()
   const { t } = i18n
   const [f, setF] = useState({
     name: employee?.name ?? '',
     phone: employee?.phone ?? '',
-    role: employee?.role ?? ('barber' as Role),
     email: employee?.email ?? '',
     password: '',
     dailyWage: employee?.dailyWage !== undefined ? String(employee.dailyWage) : '',
@@ -196,17 +210,21 @@ function EmployeeForm({ employee, onDone }: { employee?: Employee; onDone: () =>
     daysOff: employee?.daysOff ?? [],
   })
   const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string; password?: string; dailyWage?: string; joinedAt?: string }>({})
-  const paid = f.role !== 'owner'
+  const paid = role !== 'admin'
+  // Only admin and operator sign in; a barber is a name on the floor.
+  const login = role !== 'barber'
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
     const errs: typeof errors = {}
     if (f.name.trim().length < 2) errs.name = t('err.required')
     if (f.phone.trim() && !PHONE.test(f.phone.trim())) errs.phone = t('err.phone')
-    if (!EMAIL.test(f.email.trim())) errs.email = t('auth.emailInvalid')
+    if (!login) {
+      // No sign-in fields for a barber.
+    } else if (!EMAIL.test(f.email.trim())) errs.email = t('auth.emailInvalid')
     else if (state.employees.some((x) => x.id !== employee?.id && normEmail(x.email) === normEmail(f.email))) errs.email = t('auth.emailTaken')
     // A new employee needs a password; when editing, empty keeps the current one.
-    if ((!employee || f.password) && f.password.length < 6) errs.password = t('auth.passwordShort')
+    if (login && (!employee || f.password) && f.password.length < 6) errs.password = t('auth.passwordShort')
     // Every employee on payroll needs a daily wage; the owner is not on payroll.
     if (paid && !(Number(f.dailyWage) > 0)) errs.dailyWage = t('err.wage')
     if (!f.joinedAt) errs.joinedAt = t('err.date')
@@ -219,9 +237,9 @@ function EmployeeForm({ employee, onDone }: { employee?: Employee; onDone: () =>
         active: employee?.active ?? true,
         name: f.name.trim(),
         phone: f.phone.trim(),
-        role: f.role,
-        email: f.email.trim(),
-        password: f.password || undefined,
+        role,
+        email: login ? f.email.trim() : '',
+        password: (login && f.password) || undefined,
         joinedAt: f.joinedAt,
         daysOff: f.daysOff,
         dailyWage: paid ? Number(f.dailyWage) : employee?.dailyWage,
@@ -239,21 +257,19 @@ function EmployeeForm({ employee, onDone }: { employee?: Employee; onDone: () =>
       <Field label={t('c.phone')} optional error={errors.phone}>
         <input type="tel" dir="ltr" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
       </Field>
-      <Field label={t('em.email')} error={errors.email}>
-        <input type="email" dir="ltr" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
-      </Field>
-      <Field label={t('auth.password')} error={errors.password} hint={employee ? t('em.passwordKeep') : undefined}>
-        <input type="password" dir="ltr" autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
-      </Field>
-      <Field label={t('em.role')}>
-        <select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value as Role })} disabled={employee?.role === 'owner'}>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {t(`role.${r}`)}
-            </option>
-          ))}
-        </select>
-      </Field>
+      {login && (
+        <>
+          <Field label={t('em.email')} error={errors.email}>
+            <input type="email" dir="ltr" autoComplete="off" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
+          </Field>
+          <Field label={t('auth.password')} error={errors.password} hint={employee ? t('em.passwordKeep') : undefined}>
+            <input type="password" dir="ltr" autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
+          </Field>
+        </>
+      )}
+      <p className="muted small">
+        {t('em.role')}: {t(`role.${role}`)}
+      </p>
       <div className="grid-2">
         {paid && (
           <Field label={t('em.dailyWage')} error={errors.dailyWage} hint={employee ? t('em.wageHint') : undefined}>

@@ -1,10 +1,39 @@
-# HANDOFF — salon rebuild, mid-refactor
+# HANDOFF — salon rebuild
 
-Branch `fo2sh`. **The build is intentionally red.** This is a checkpoint in the middle of a
-schema-and-UI refactor, committed so it can be continued on another machine. Read this first.
+Branch `fo2sh`. **The build is green again**: `npx tsc --noEmit` → 0 errors, `npm test` → 16/16,
+`npm run lint` → 0 errors, `npm run build` passes, `npm audit` → 0 vulnerabilities.
 
-Status: `npx tsc --noEmit` → **69 errors**, all of them expected and listed below.
-`npm test` → **passes nothing useful yet** (the fixtures are stale, see §3).
+## 0. Update — §3 items 1–8, 10 and part of 12 are done
+
+- **Routing.** `main.tsx` now serves two lazy bundles: `#/` → `Public.tsx` alone (no store, no
+  supabase-js, no i18n, no admin CSS, no three.js), everything else → `Staff.tsx` (store + `App`).
+  Signed out → `SignIn`. An operator gets only the Operator screen; the admin gets the back office,
+  whose first route is now `#/op` (replacing `#/floor`).
+- `Floor.tsx` deleted. The customer view (`PublicFloor`, "my visits", the footer) is gone with it.
+- `i18n.ts`: `role.admin/operator/barber`; every `pub.*` key, the customer sign-up keys and the
+  BACKLOG dead keys are removed; the Operator strings moved in as `op.*`. `Public.tsx` keeps its
+  local strings on purpose (it must not import i18n.ts). **Western digits everywhere** is now one
+  flag: the Arabic locale is `ar-EG-u-nu-latn`. A plural-aware `i18n.minutes(n)` fixes `٥ دقيقة`.
+  `em.locked` no longer says "demo user"; `em.dailyWage` no longer hardcodes the currency.
+- `Employees.tsx`: two sections. Sign-in accounts (admin + operators, created via `admin-users`)
+  and barbers (name/phone/wage only, via `save_barber`, no login).
+- `SignIn.tsx`: staff only. Admin → `#/dashboard`, operator → `#/op`.
+- Seed, tests, store and `Three3D` fixed. New tests cover multi-service pricing, the waiting
+  counter floor, the admin lock and the new `reopen` action.
+- Edge function `admin-users`: whitelist is `['operator']`, **and its caller check said
+  `role !== 'owner'`, which would have locked every admin out after the enum change.** Fixed.
+- **Operator Undo was wrong:** the one snackbar always called `undo_waiting`, so Undo after
+  Start or Done decremented the waiting count instead. Each snackbar now carries its own inverse:
+  Start → release (cancels the visit), Done → new `reopen_visit` RPC, +/− → `undo_waiting`.
+- New migration `20261120200300_reopen_visit.sql` (completed visits only, within 15 min,
+  only while the seat is still free).
+
+Still open: §3 item 9 (PIN sign-in with lockout), the ≤50 KB first-load target (the public route
+is 2.7 KB of its own JS, but the shared React chunk is ~70 KB gzip), and operator RLS: an operator
+reads only visits where `created_by = auth.uid()`, so two front-desk devices on *different* operator
+accounts will not see each other's in-progress cards.
+
+The original notes follow.
 
 ## 1. Run it locally
 

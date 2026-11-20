@@ -265,10 +265,9 @@ export function Floor3D({ height = 340, onSelect }: { height?: number; onSelect?
       scene.add(part(rbox(7.4, 0.03, 3.1, 0.01), new THREE.MeshStandardMaterial({ color: 0xb9a58a, roughness: 1 }), 0, 0.015, 2.75))
 
       // Narrow screens: name only (colour carries the status) so the seven labels don't collide.
-      // A seat reserved online shows the customer's name instead of the status.
       const narrow = el.clientWidth < 600
       const seatLabel = (s: Seat) => {
-        const extra = s.status === 'reserved' && s.reservedName ? s.reservedName : narrow ? '' : i18n.t(`seat.${s.status}`)
+        const extra = narrow ? '' : i18n.t(`seat.${s.status}`)
         return label(extra ? `${i18n.seatName(s)} · ${extra}` : i18n.seatName(s), `three-label seat-label s-${s.status}`)
       }
       const skins = new Map<string, THREE.MeshPhysicalMaterial>()

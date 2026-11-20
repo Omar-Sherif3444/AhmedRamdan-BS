@@ -13,7 +13,7 @@ export default function Attendance() {
   const [employee, setEmployee] = useState('')
   const [showCancelled, setShowCancelled] = useState(false)
   const [editing, setEditing] = useState<Absence | 'new' | null>(null)
-  const staff = state.employees.filter((e) => e.role !== 'owner')
+  const staff = state.employees.filter((e) => e.role !== 'admin')
   const name = (id: string) => state.employees.find((e) => e.id === id)?.name ?? ''
 
   const rows = useMemo(
@@ -121,7 +121,7 @@ export default function Attendance() {
 function AbsenceForm({ absence, defaultEmployee, onDone }: { absence?: Absence; defaultEmployee: string; onDone: () => void }) {
   const { state, dispatch, toast, i18n } = useStore()
   const { t } = i18n
-  const staff = state.employees.filter((e) => e.role !== 'owner' && (e.active || e.id === absence?.employeeId))
+  const staff = state.employees.filter((e) => e.role !== 'admin' && (e.active || e.id === absence?.employeeId))
   const [f, setF] = useState({ employeeId: absence?.employeeId ?? defaultEmployee, day: absence?.day ?? dayKey(new Date()), reason: absence?.reason ?? '' })
   const [errors, setErrors] = useState<{ employeeId?: string; day?: string }>({})
   const [confirmCancel, setConfirmCancel] = useState(false)

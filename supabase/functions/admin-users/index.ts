@@ -1,4 +1,4 @@
-// Owner-only staff account management. Runs server-side with the service-role key,
+// Admin-only staff account management. Runs server-side with the service-role key,
 // which must never reach the browser.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -9,7 +9,8 @@ const cors = {
 }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const ROLES = ['barber', 'receptionist']
+// Only operator logins are created here; barbers have no login (save_barber RPC) and the admin is never created.
+const ROLES = ['operator']
 
 type Body =
   | { action: 'create'; email: string; password: string; name: string; role: string; phone?: string }
@@ -24,7 +25,7 @@ Deno.serve(async (req) => {
   const { data: caller } = await admin.auth.getUser(token)
   if (!caller.user) return json({ error: 'unauthorized' }, 401)
   const { data: me } = await admin.from('staff').select('role, active').eq('id', caller.user.id).maybeSingle()
-  if (me?.role !== 'owner' || !me.active) return json({ error: 'forbidden' }, 403)
+  if (me?.role !== 'admin' || !me.active) return json({ error: 'forbidden' }, 403)
 
   let body: Body
   try {

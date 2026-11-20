@@ -10,7 +10,6 @@ const state = (): State => ({
   settings: { shopName: 'x', currency: 'EGP', lang: 'ar' },
   currentUserId: 'e1',
   signedIn: true,
-  customerId: null,
   notices: [],
 })
 
@@ -37,7 +36,7 @@ test('week starts on Saturday', () => {
 test('register, complete with expected next keeps the seat reserved', () => {
   let s = state()
   const now = new Date().toISOString()
-  s = reducer(s, { type: 'register', seatId: 'c3', name: 'Test', phone: '', employeeId: 'e2', serviceId: 'sv1', amount: 120, method: 'cash', expectNext: true, now })
+  s = reducer(s, { type: 'register', seatId: 'c3', name: 'Test', phone: '', employeeId: 'e2', serviceIds: ['sv1'], amount: 120, method: 'cash', expectNext: true, now })
   const seat = s.seats.find((x) => x.id === 'c3')!
   assert.equal(seat.status, 'occupied')
   const before = revenue(s.visits)
@@ -63,7 +62,7 @@ test('occupied seats cannot go out of service; returning customer matched by pho
   assert.equal(reducer(s, { type: 'outOfService', seatId: 'c1' }), s)
   const c = s.customers.find((x) => x.phone)!
   const n = s.customers.length
-  s = reducer(s, { type: 'register', seatId: 's2', name: 'other spelling', phone: c.phone, employeeId: 'e2', serviceId: 'sv1', amount: 1, method: 'cash', expectNext: false, now: new Date().toISOString() })
+  s = reducer(s, { type: 'register', seatId: 's2', name: 'other spelling', phone: c.phone, employeeId: 'e2', serviceIds: ['sv1'], amount: 1, method: 'cash', expectNext: false, now: new Date().toISOString() })
   assert.equal(s.customers.length, n)
 })
 
@@ -73,21 +72,21 @@ test('csv escapes quotes', () => {
 
 test('session and data actions keep local preferences', () => {
   let s = state()
-  s = reducer(s, { type: 'session', staffId: 'e2', customerId: null })
+  s = reducer(s, { type: 'session', staffId: 'e2' })
   assert.equal(s.signedIn, true)
   assert.equal(s.currentUserId, 'e2')
   const { seats, employees, customers, services } = state()
-  s = reducer(s, { type: 'data', data: { seats, employees, customers, services, visits: [], expenses: [], absences: [], holidays: [], wages: [], deductions: [] }, shop: { shopName: 'Live', currency: 'USD' } })
+  s = reducer(s, { type: 'data', data: { seats, employees, customers, services, visits: [], expenses: [], absences: [], holidays: [], wages: [], deductions: [], waiting: 0 }, shop: { shopName: 'Live', currency: 'USD' } })
   assert.equal(s.visits.length, 0)
   assert.deepEqual([s.settings.shopName, s.settings.currency, s.settings.lang], ['Live', 'USD', 'ar'])
-  s = reducer(s, { type: 'session', staffId: null, customerId: null })
+  s = reducer(s, { type: 'session', staffId: null })
   assert.equal(s.signedIn, false)
 })
 
 test('register sets and complete clears the public since time', () => {
   let s = state()
   const now = new Date().toISOString()
-  s = reducer(s, { type: 'register', seatId: 'c3', name: 'Test', phone: '', employeeId: 'e2', serviceId: 'sv1', amount: 120, method: 'cash', expectNext: false, now })
+  s = reducer(s, { type: 'register', seatId: 'c3', name: 'Test', phone: '', employeeId: 'e2', serviceIds: ['sv1'], amount: 120, method: 'cash', expectNext: false, now })
   assert.equal(s.seats.find((x) => x.id === 'c3')!.since, now)
   s = reducer(s, { type: 'complete', seatId: 'c3', now })
   assert.equal(s.seats.find((x) => x.id === 'c3')!.since, undefined)
@@ -111,4 +110,43 @@ test('absences: one active record per employee and day', () => {
   s = reducer(s, { type: 'cancelAbsence', id: s.absences[0].id, now })
   s = reducer(s, { type: 'saveAbsence', employeeId: 'e2', day: '2026-10-07', reason: 'again', now })
   assert.equal(s.absences.filter((a) => !a.cancelledAt).length, 1)
+})
+
+test('register with several services prices the visit from the catalogue', () => {
+  let s = state()
+  s = reducer(s, { type: 'register', seatId: 'c3', name: '', employeeId: 'e2', serviceIds: ['sv1', 'sv2'], method: 'cash', now: new Date().toISOString() })
+  const v = s.visits.at(-1)!
+  assert.deepEqual(v.serviceIds, ['sv1', 'sv2'])
+  assert.equal(v.serviceId, 'sv1')
+  assert.equal(v.amount, 120 + 70)
+})
+
+test('waiting counter never goes below zero', () => {
+  let s = state()
+  assert.equal(s.waiting, 0)
+  s = reducer(s, { type: 'waitingBump', delta: 1 })
+  s = reducer(s, { type: 'waitingBump', delta: 1 })
+  s = reducer(s, { type: 'waitingBump', delta: -1 })
+  assert.equal(s.waiting, 1)
+  s = reducer(s, { type: 'waitingBump', delta: -1 })
+  s = reducer(s, { type: 'waitingBump', delta: -1 })
+  assert.equal(s.waiting, 0)
+})
+
+test('the admin cannot be deactivated', () => {
+  const s = state()
+  assert.equal(reducer({ ...s, currentUserId: 'e5' }, { type: 'toggleEmployee', id: 'e1' }).employees.find((e) => e.id === 'e1')!.active, true)
+})
+
+test('reopen undoes a Done while the seat is still free', () => {
+  let s = state()
+  const now = new Date().toISOString()
+  s = reducer(s, { type: 'register', seatId: 'c3', name: 'x', employeeId: 'e2', serviceIds: ['sv1'], method: 'cash', now })
+  const id = s.seats.find((x) => x.id === 'c3')!.visitId!
+  s = reducer(s, { type: 'complete', seatId: 'c3', now })
+  s = reducer(s, { type: 'reopen', visitId: id })
+  assert.equal(s.visits.find((v) => v.id === id)!.status, 'in_progress')
+  assert.equal(s.seats.find((x) => x.id === 'c3')!.visitId, id)
+  // An in-progress visit cannot be reopened twice.
+  assert.equal(reducer(s, { type: 'reopen', visitId: id }), s)
 })

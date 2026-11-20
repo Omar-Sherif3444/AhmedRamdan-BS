@@ -1,6 +1,6 @@
 // Data layer: loads the shop from Supabase, sends each reducer action to its server function, and handles sign-in.
 import { supabase } from './supabase'
-import { normEmail, normPhone } from './auth'
+import { normEmail } from './auth'
 import type { Action } from './reducer'
 import type { Key } from '../i18n'
 import type { Absence, Customer, Data, DateRange, Deduction, Employee, Expense, Holiday, PayrollRow, Seat, Service, Settings, State, Visit, WageRate } from '../types'
@@ -157,6 +157,8 @@ export function run(a: Action, before: State): Promise<unknown> | null {
     case 'complete':
     case 'release':
       return rpc('end_visit', { p_seat: a.seatId, p_complete: a.type === 'complete' })
+    case 'reopen':
+      return rpc('reopen_visit', { p_visit: a.visitId })
     case 'setExpectNext':
       return rpc('set_expect_next', { p_seat: a.seatId, p_value: a.value })
     case 'reserve':
@@ -186,11 +188,19 @@ export function run(a: Action, before: State): Promise<unknown> | null {
     case 'toggleEmployee': {
       const e = before.employees.find((x) => x.id === a.id)
       if (!e) return null
+      // Barbers have no login and are saved through their own function.
+      if (e.role === 'barber') return rpc('save_barber', { p_id: e.id, p_name: e.name, p_phone: e.phone, p_active: !e.active })
       return rpc('update_staff', { p_id: e.id, p_name: e.name, p_phone: e.phone, p_role: e.role, p_active: !e.active })
     }
     case 'saveEmployee': {
       const e = a.employee
       const old = before.employees.find((x) => x.id === e.id)
+      // A barber is a profile, never an auth user: no email, no password, no edge function.
+      if (e.role === 'barber')
+        return (async () => {
+          const id = (await rpc('save_barber', { p_id: old ? e.id : null, p_name: e.name, p_phone: e.phone, p_active: e.active })) as string
+          await staffPay(id, e)
+        })()
       if (!old)
         return (async () => {
           const created = await adminUsers({ action: 'create', email: e.email, password: e.password, name: e.name, role: e.role, phone: e.phone })
@@ -234,7 +244,7 @@ export function run(a: Action, before: State): Promise<unknown> | null {
 export function errorKey(e: unknown): Key {
   const m = e instanceof Error ? e.message : String((e as { message?: string })?.message ?? e)
   if (m.includes('email_taken')) return 'auth.emailTaken'
-  if (m.includes('already_reserved')) return 'err.alreadyReserved'
+  if (m.includes('owner_locked')) return 'err.ownerLocked'
   if (m.includes('duplicate_absence')) return 'err.duplicateAbsence'
   if (m.includes('payroll_locked')) return 'err.payrollLocked'
   if (m.includes('already_paid')) return 'err.alreadyPaid'

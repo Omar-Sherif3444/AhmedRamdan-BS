@@ -10,7 +10,7 @@ import type { PayrollRow } from '../types'
 export default function Payroll() {
   const { state, i18n } = useStore()
   const { t } = i18n
-  const isOwner = state.employees.find((e) => e.id === state.currentUserId)?.role === 'owner'
+  const isOwner = state.employees.find((e) => e.id === state.currentUserId)?.role === 'admin'
   const [month, setMonth] = useState(monthStart().slice(0, 7))
   const [rows, setRows] = useState<PayrollRow[] | null>(null)
   const [failed, setFailed] = useState(false)

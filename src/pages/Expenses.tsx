@@ -11,7 +11,7 @@ const KINDS: ExpenseKind[] = ['shop', 'personal']
 export default function Expenses() {
   const { state, i18n } = useStore()
   const { t } = i18n
-  const isOwner = state.employees.find((e) => e.id === state.currentUserId)?.role === 'owner'
+  const isOwner = state.employees.find((e) => e.id === state.currentUserId)?.role === 'admin'
   const [range, setRange] = useRange('month')
   const [employee, setEmployee] = useState('')
   const [kind, setKind] = useState<ExpenseKind | ''>('')

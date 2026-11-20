@@ -107,7 +107,7 @@ export default function Transactions() {
   const [page, setPage] = useState(0)
   const [editing, setEditing] = useState<Visit | null>(null)
   // Correcting or removing past transactions is for the owner only (the server enforces it too).
-  const isOwner = state.employees.find((e) => e.id === state.currentUserId)?.role === 'owner'
+  const isOwner = state.employees.find((e) => e.id === state.currentUserId)?.role === 'admin'
 
   const all = useTxRows(useMemo(() => inRange(state.visits, range), [state.visits, range]))
   const rows = useMemo(() => {

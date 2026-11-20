@@ -4,39 +4,6 @@ import { useStore } from '../store'
 import type { Visit } from '../types'
 import '../operator.css'
 
-// i18n: move to i18n.ts (i18n.t throws on unknown keys, so the operator strings live here for now).
-const L = {
-  entry: 'عميل جديد',
-  name: 'الاسم',
-  optional: 'اختياري',
-  services: 'الخدمة',
-  barber: 'الحلاق',
-  seat: 'الكرسي',
-  swapSeat: 'تغيير الكرسي',
-  noSeat: 'كل الكراسي مشغولة',
-  start: 'ابدأ',
-  pickService: 'اختر خدمة',
-  pickBarber: 'اختر الحلاق',
-  noBarbers: 'لا يوجد حلاق متاح',
-  live: 'تحت الخدمة',
-  noneLive: 'لا أحد تحت الخدمة',
-  done: 'تم',
-  guest: 'عميل',
-  waiting: 'في الانتظار',
-  walkIn: 'عميل دخل',
-  seated: 'عميل جلس',
-  undo: 'تراجع',
-  editAmount: 'تصحيح المبلغ',
-  save: 'حفظ',
-  cancel: 'إلغاء',
-  badAmount: 'المبلغ غير صحيح',
-  loading: 'جارٍ التحميل…',
-  minutes: (m: number) => `${m} دقيقة`,
-  started: (name: string) => `${name} · بدأت الخدمة`,
-  finished: (name: string) => `${name} · تم`,
-  auto: (n: number) => `عميل ${n}`,
-}
-
 /** Mis-tap guard: a commit is ignored inside this window after the in-progress list reflows. */
 const REFLOW_MS = 200
 /** One commit per this window; the control is disabled meanwhile. */
@@ -73,6 +40,7 @@ const elapsed = (from: string, now: number) => Math.max(0, Math.round((now - Dat
  */
 export default function Operator() {
   const { state, dispatch, i18n, status } = useStore()
+  const { t } = i18n
   const now = useNow()
 
   // Western digits everywhere (DESIGN.md): ar-EG defaults to Arabic-Indic, so the numbering system is pinned.
@@ -105,9 +73,9 @@ export default function Operator() {
   const autoName = useMemo(() => {
     const taken = new Set(state.customers.map((c) => c.name.trim()))
     let n = state.customers.length + 1
-    while (taken.has(L.auto(n))) n += 1
-    return L.auto(n)
-  }, [state.customers])
+    while (taken.has(t('op.auto', { n }))) n += 1
+    return t('op.auto', { n })
+  }, [state.customers, t])
 
   const [lock, setLock] = useState(false)
   useEffect(() => {
@@ -135,16 +103,17 @@ export default function Operator() {
     setEnding((p) => (p.length ? p.filter((id) => ids.includes(id)) : p))
   }, [rowKey])
 
-  const [note, setNote] = useState<{ n: number; text: string } | null>(null)
+  // The snackbar carries the inverse of whatever it announces, so Undo always undoes that action.
+  const [note, setNote] = useState<{ n: number; text: string; undo: () => void } | null>(null)
   const seq = useRef(0)
   useEffect(() => {
     if (!note) return
     const id = setTimeout(() => setNote(null), UNDO_MS)
     return () => clearTimeout(id)
   }, [note])
-  const flash = (text: string) => setNote({ n: (seq.current += 1), text })
+  const flash = (text: string, undo: () => void) => setNote({ n: (seq.current += 1), text, undo })
 
-  const nameOf = (v: Visit) => state.customers.find((c) => c.id === v.customerId)?.name.trim() || L.guest
+  const nameOf = (v: Visit) => state.customers.find((c) => c.id === v.customerId)?.name.trim() || t('op.guest')
 
   const ready = !!seat && picked.length > 0 && !!barberId
   const commit = () => {
@@ -155,8 +124,10 @@ export default function Operator() {
     setPicked([])
     setWho('')
     setSeatPick('')
-    dispatch({ type: 'register', seatId: seat.id, name, serviceIds: picked, employeeId: barberId, method: 'cash' })
-    flash(L.started(name))
+    const seatId = seat.id
+    dispatch({ type: 'register', seatId, name, serviceIds: picked, employeeId: barberId, method: 'cash', now: new Date().toISOString() })
+    // Undo of a start cancels that visit and frees the chair.
+    flash(t('op.started', { name }), () => dispatch({ type: 'release', seatId, now: new Date().toISOString() }))
     buzz(12)
   }
 
@@ -165,20 +136,22 @@ export default function Operator() {
     if (!steady() || ending.includes(v.id)) return
     const name = nameOf(v)
     setEnding((p) => [...p, v.id])
-    dispatch({ type: 'complete', seatId: v.seatId })
-    flash(L.finished(name))
+    dispatch({ type: 'complete', seatId: v.seatId, now: new Date().toISOString() })
+    flash(t('op.finished', { name }), () => dispatch({ type: 'reopen', visitId: v.id }))
     buzz(16)
   }
 
   const bump = (delta: 1 | -1) => {
     if (delta === -1 && state.waiting <= 0) return
     dispatch({ type: 'waitingBump', delta })
+    flash(t(delta === 1 ? 'op.bumpedUp' : 'op.bumpedDown', { n: state.waiting + delta }), () => dispatch({ type: 'undoLast' }))
     buzz(delta === 1 ? 10 : [8, 36, 8])
   }
 
   const undo = () => {
+    if (!note) return
     setNote(null)
-    dispatch({ type: 'undoLast' })
+    note.undo()
     buzz(20)
   }
 
@@ -191,22 +164,22 @@ export default function Operator() {
 
   return (
     <div className="op">
-      <section className="op-entry" aria-label={L.entry}>
+      <section className="op-entry" aria-label={t('op.entry')}>
         <div className="op-entry-head">
-          <h2 className="op-h">{L.entry}</h2>
+          <h2 className="op-h">{t('op.entry')}</h2>
           {seat ? (
-            <button type="button" className="op-seat" onClick={cycleSeat} aria-label={freeSeats.length > 1 ? L.swapSeat : L.seat}>
-              <span className="op-seat-k">{L.seat}</span>
+            <button type="button" className="op-seat" onClick={cycleSeat} aria-label={freeSeats.length > 1 ? t('op.swapSeat') : t('op.seat')}>
+              <span className="op-seat-k">{t('op.seat')}</span>
               <span className="op-seat-v">{i18n.seatName(seat)}</span>
             </button>
           ) : (
-            <span className="op-seat op-seat-off">{L.noSeat}</span>
+            <span className="op-seat op-seat-off">{t('op.noSeat')}</span>
           )}
         </div>
 
         <label className="op-name">
           <span className="op-k">
-            {L.name} <span className="op-muted">({L.optional})</span>
+            {t('op.name')} <span className="op-muted">({t('op.optional')})</span>
           </span>
           <input
             className="op-input"
@@ -220,9 +193,9 @@ export default function Operator() {
           />
         </label>
 
-        <div className="op-group" role="group" aria-label={L.services}>
+        <div className="op-group" role="group" aria-label={t('op.services')}>
           <span className="op-k">
-            <Scissors size={15} aria-hidden /> {L.services}
+            <Scissors size={15} aria-hidden /> {t('op.services')}
           </span>
           <div className="op-chips">
             {services.map((s) => (
@@ -234,9 +207,9 @@ export default function Operator() {
           </div>
         </div>
 
-        <div className="op-group" role="group" aria-label={L.barber}>
+        <div className="op-group" role="group" aria-label={t('op.barber')}>
           <span className="op-k">
-            <User size={15} aria-hidden /> {L.barber}
+            <User size={15} aria-hidden /> {t('op.barber')}
           </span>
           <div className="op-chips">
             {barbers.map((e) => (
@@ -244,43 +217,43 @@ export default function Operator() {
                 <span className="op-chip-t">{e.name}</span>
               </button>
             ))}
-            {!barbers.length && <p className="op-muted">{L.noBarbers}</p>}
+            {!barbers.length && <p className="op-muted">{t('op.noBarbers')}</p>}
           </div>
         </div>
       </section>
 
-      <section className={settling ? 'op-live settling' : 'op-live'} aria-label={L.live}>
+      <section className={settling ? 'op-live settling' : 'op-live'} aria-label={t('op.live')}>
         <h2 className="op-h">
-          {L.live} <span className="op-count">{live.length}</span>
+          {t('op.live')} <span className="op-count">{live.length}</span>
         </h2>
         {live.map((v) => (
           <LiveCard key={v.id} visit={v} name={nameOf(v)} minutes={elapsed(v.startedAt, now)} money={money} busy={ending.includes(v.id)} onDone={() => finish(v)} />
         ))}
-        {!live.length && <p className="op-empty">{status === 'loading' ? L.loading : L.noneLive}</p>}
+        {!live.length && <p className="op-empty">{status === 'loading' ? t('c.loading') : t('op.noneLive')}</p>}
       </section>
 
       <div className="op-dock">
         <button type="button" className="op-start" onClick={commit} disabled={!ready || lock} aria-describedby="op-hint">
           <Check size={22} aria-hidden />
-          <span>{L.start}</span>
+          <span>{t('op.start')}</span>
           {total > 0 && <span className="op-start-sum">{money.format(total)}</span>}
         </button>
         <p className="op-hint" id="op-hint">
-          {!seat ? L.noSeat : !picked.length ? L.pickService : !barberId ? L.pickBarber : `${typed.trim() || autoName} · ${seat ? i18n.seatName(seat) : ''}`}
+          {!seat ? t('op.noSeat') : !picked.length ? t('op.pickService') : !barberId ? t('op.pickBarber') : `${typed.trim() || autoName} · ${seat ? i18n.seatName(seat) : ''}`}
         </p>
 
-        <div className="op-counter" role="group" aria-label={L.waiting}>
+        <div className="op-counter" role="group" aria-label={t('op.waiting')}>
           <Couch />
-          <button type="button" className="op-big" onClick={() => bump(1)} aria-label={L.walkIn}>
+          <button type="button" className="op-big" onClick={() => bump(1)} aria-label={t('op.walkIn')}>
             <Plus size={40} aria-hidden strokeWidth={3} />
           </button>
           <p className="op-wait">
             <span className="op-wait-n" aria-live="polite">
               {state.waiting}
             </span>
-            <span className="op-wait-k">{L.waiting}</span>
+            <span className="op-wait-k">{t('op.waiting')}</span>
           </p>
-          <button type="button" className="op-big" onClick={() => bump(-1)} disabled={state.waiting <= 0} aria-label={L.seated}>
+          <button type="button" className="op-big" onClick={() => bump(-1)} disabled={state.waiting <= 0} aria-label={t('op.seated')}>
             <Minus size={40} aria-hidden strokeWidth={3} />
           </button>
         </div>
@@ -291,7 +264,7 @@ export default function Operator() {
           <div className="op-snack" key={note.n}>
             <span>{note.text}</span>
             <button type="button" className="op-undo" onClick={undo}>
-              <Undo2 size={18} aria-hidden /> {L.undo}
+              <Undo2 size={18} aria-hidden /> {t('op.undo')}
             </button>
           </div>
         )}
@@ -317,6 +290,7 @@ function LiveCard({
   onDone: () => void
 }) {
   const { state, dispatch, toast, i18n } = useStore()
+  const { t } = i18n
   const [edit, setEdit] = useState(false)
   const [amount, setAmount] = useState('')
 
@@ -329,7 +303,7 @@ function LiveCard({
   }
   const save = () => {
     const value = Number(amount)
-    if (!(value > 0)) return toast(L.badAmount)
+    if (!(value > 0)) return toast(t('op.badAmount'))
     setEdit(false)
     dispatch({ type: 'updatePayment', visitId: visit.id, amount: value, method: visit.method })
     buzz(10)
@@ -347,7 +321,7 @@ function LiveCard({
         </span>
       </div>
       <span className="op-card-min">
-        <Clock size={14} aria-hidden /> {L.minutes(minutes)}
+        <Clock size={14} aria-hidden /> {i18n.minutes(minutes)}
       </span>
       {edit ? (
         <span className="op-pay">
@@ -357,24 +331,24 @@ function LiveCard({
             inputMode="decimal"
             autoFocus
             value={amount}
-            aria-label={L.editAmount}
+            aria-label={t('op.editAmount')}
             onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
             onKeyDown={(e) => e.key === 'Enter' && save()}
           />
-          <button type="button" className="op-icon" onClick={save} aria-label={L.save}>
+          <button type="button" className="op-icon" onClick={save} aria-label={t('c.save')}>
             <Check size={18} aria-hidden />
           </button>
-          <button type="button" className="op-icon" onClick={() => setEdit(false)} aria-label={L.cancel}>
+          <button type="button" className="op-icon" onClick={() => setEdit(false)} aria-label={t('c.cancel')}>
             <X size={18} aria-hidden />
           </button>
         </span>
       ) : (
-        <button type="button" className="op-amount" onClick={open} aria-label={L.editAmount}>
+        <button type="button" className="op-amount" onClick={open} aria-label={t('op.editAmount')}>
           {money.format(visit.amount)}
         </button>
       )}
       <button type="button" className="op-done" onClick={onDone} disabled={busy}>
-        <Check size={20} aria-hidden /> {L.done}
+        <Check size={20} aria-hidden /> {t('op.done')}
       </button>
     </article>
   )
