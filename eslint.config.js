@@ -15,11 +15,10 @@ import globals from 'globals'
  *   paddingLeft/Right -> paddingInlineStart / paddingInlineEnd
  *   left / right      -> insetInlineStart / insetInlineEnd
  *   textAlign left    -> start, right -> end
- * CSS files are covered by the matching stylelint rules in .stylelintrc.json.
+ * CSS files are covered by the matching stylelint rules in stylelint.config.js.
  */
 const PHYSICAL = 'marginLeft|marginRight|paddingLeft|paddingRight|borderLeft|borderRight|left|right|float|clear'
-const RTL_HINT =
-  'RTL: inline physical direction. Use the logical property instead (marginInlineStart/End, paddingInlineStart/End, insetInlineStart/End, borderInlineStart/End).'
+const RTL_HINT = 'RTL: inline physical direction. Use the logical property instead (marginInlineStart/End, paddingInlineStart/End, insetInlineStart/End, borderInlineStart/End).'
 const rtlSyntax = [
   {
     selector: `JSXAttribute[name.name='style'] ObjectExpression > Property[key.name=/^(${PHYSICAL})$/]`,
@@ -41,15 +40,7 @@ const rtlSyntax = [
 
 export default tseslint.config(
   {
-    ignores: [
-      'dist/**',
-      'brag-output/**',
-      'public/**',
-      'supabase/**',
-      'coverage/**',
-      '.factory/**',
-      '.vercel/**',
-    ],
+    ignores: ['dist/**', 'brag-output/**', 'public/**', 'supabase/**', 'coverage/**', '.factory/**', '.vercel/**'],
   },
   js.configs.recommended,
   tseslint.configs.recommended,

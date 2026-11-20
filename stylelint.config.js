@@ -6,17 +6,9 @@
 // Everything stylelint-config-standard says about formatting is advisory
 // (`defaultSeverity: 'warning'`, which does not fail the CI gate). The two RTL
 // rules below are raised back to `error` so they do.
-const PHYSICAL_PROPERTIES = [
-  'margin-left',
-  'margin-right',
-  'padding-left',
-  'padding-right',
-  'left',
-  'right',
-]
+const PHYSICAL_PROPERTIES = ['margin-left', 'margin-right', 'padding-left', 'padding-right', 'left', 'right']
 
-const PROPERTY_HINT =
-  'RTL: physical direction. Use the logical property instead — margin-inline-start/end, padding-inline-start/end, inset-inline-start/end.'
+const PROPERTY_HINT = 'RTL: physical direction. Use the logical property instead — margin-inline-start/end, padding-inline-start/end, inset-inline-start/end.'
 const VALUE_HINT = 'RTL: use "start" / "end" instead of "left" / "right".'
 
 /** @type {import('stylelint').Config} */
@@ -55,5 +47,10 @@ export default {
     'color-function-notation': null,
     'declaration-block-no-redundant-longhand-properties': null,
     'media-feature-range-notation': null,
+    'rule-empty-line-before': null,
+    'comment-empty-line-before': null,
+    'declaration-empty-line-before': null,
+    'custom-property-empty-line-before': null,
+    'at-rule-empty-line-before': null,
   },
 }

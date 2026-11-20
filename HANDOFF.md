@@ -129,9 +129,28 @@ customer session fallback deleted), `lib/reducer.ts` (new action union, optimist
    cannot reach payroll, money reports or employee management.
 10. **The edge function `supabase/functions/admin-users/index.ts` still whitelists
     `['barber','receptionist']`.** It must become `['operator']`. Not yet changed.
-11. **ESLint/Prettier could not be installed**: `typescript-eslint` does not support TypeScript 7.0,
-    which this project uses. Either pin TS to 5.x, wait for upstream support, or use `oxlint`.
-    This is why `factory.json`'s `lint` command is still empty and the gate skips.
+11. **Linting is DONE and the gate is green** — `npm run lint` → 0 errors / 21 warnings,
+    `npm run lint:css` → 0 errors / 2 warnings, so `factory.json`'s `lint` step now passes.
+    The 21 warnings are pre-existing and deliberately non-blocking; work them off at leisure
+    (6 `react-refresh/only-export-components`, 5 `react-hooks/set-state-in-effect`,
+    3 `exhaustive-deps`, 3 `react-hooks/refs`, 2 RTL, 1 unused var, 1 purity).
+    - **The RTL guard is the valuable part**: ESLint `no-restricted-syntax` blocks physical
+      direction properties in JSX `style` props and `el.style.x =` assignments, and stylelint
+      blocks `margin-left`, `padding-right`, bare `left`/`right`, `text-align: left/right` and
+      `float` in CSS, each with a message naming the logical replacement. `src/styles.css` is
+      exempted (it has intentional physical rules and was not modified); `operator.css` and
+      `public.css` are fully guarded and pass clean. This is what stops RTL rotting.
+    - **One dependency change you must understand.** `typescript-eslint` hard-refuses to run on
+      TypeScript 7 (it `throw`s: TS 7 is the native port and no longer ships the JS compiler API).
+      The fix applied is Microsoft's documented side-by-side layout:
+      `"typescript": "npm:@typescript/typescript6@^6.0.2"` provides the compiler *API* the linter
+      needs, and `"@typescript/native": "npm:typescript@^7.0.2"` provides the real TS 7 whose
+      `tsc` binary `build` and `typecheck` still use. Verified: `npx tsc --version` → 7.0.2, and
+      `npm install` resolves without `--legacy-peer-deps`. **Revert to a plain `typescript`
+      dependency once typescript-eslint supports TS ≥ 7.1** (upstream issue 10940). If the build
+      ever behaves oddly, this aliasing is the first thing to suspect.
+    - `npm run format` is NOT part of the gate: `prettier --check` reports 26 pre-existing files
+      as unformatted, and reformatting them is a deliberate decision for whoever owns `src/`.
 12. Then: `config.toml:160` `site_url` and `index.html:12-13` OG tags still name the old Vercel
     deployment.
 

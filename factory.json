@@ -3,11 +3,17 @@
   "one_liner": "Live waiting board and salon console: one-screen operator entry, admin back office, public wait count.",
   "blueprint": "web-app",
   "version": "0.1.0",
-  "check": ["lint", "typecheck", "test", "build", "audit"],
+  "check": [
+    "lint",
+    "typecheck",
+    "test",
+    "build",
+    "audit"
+  ],
   "stopOnFail": true,
   "commands": {
     "install": "npm install",
-    "lint": "",
+    "lint": "npm run lint && npm run lint:css",
     "typecheck": "npx tsc --noEmit",
     "test": "npm test",
     "build": "npm run build",
