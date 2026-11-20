@@ -18,12 +18,18 @@ export interface Seat {
 }
 
 /**
- * Two account levels, plus barbers. A barber is a staff row with no login at all:
- * no `auth.users` entry, no email, no PIN. The operator records what they did.
+ * Two accounts sign in: the owner (admin) and one shared front-desk account (operator).
+ * Barbers and employees are profiles with no login at all: no `auth.users` entry, no email.
+ * The front desk records which barber served each customer.
  */
-export type Role = 'admin' | 'operator' | 'barber'
+export type Role = 'admin' | 'operator' | 'barber' | 'employee'
 /** The roles that can actually sign in. */
 export const ACCOUNT_ROLES = ['admin', 'operator'] as const
+/** Login-less staff the owner manages. */
+export const PROFILE_ROLES = ['barber', 'employee'] as const
+export const isProfile = (r: Role) => r === 'barber' || r === 'employee'
+/** On payroll and attendance: everyone but the owner and the shared shop account. */
+export const isPaid = (r: Role) => r !== 'admin' && r !== 'operator'
 
 export interface Employee {
   id: string

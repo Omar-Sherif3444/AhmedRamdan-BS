@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 import { normEmail } from './auth'
 import type { Action } from './reducer'
 import type { Key } from '../i18n'
+import { isProfile } from '../types'
 import type { Absence, Customer, Data, DateRange, Deduction, Employee, Expense, Holiday, PayrollRow, Seat, Service, Settings, State, Visit, WageRate } from '../types'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -188,17 +189,17 @@ export function run(a: Action, before: State): Promise<unknown> | null {
     case 'toggleEmployee': {
       const e = before.employees.find((x) => x.id === a.id)
       if (!e) return null
-      // Barbers have no login and are saved through their own function.
-      if (e.role === 'barber') return rpc('save_barber', { p_id: e.id, p_name: e.name, p_phone: e.phone, p_active: !e.active })
+      // Barbers and employees have no login and are saved through their own function.
+      if (isProfile(e.role)) return rpc('save_barber', { p_id: e.id, p_name: e.name, p_phone: e.phone, p_active: !e.active, p_role: e.role })
       return rpc('update_staff', { p_id: e.id, p_name: e.name, p_phone: e.phone, p_role: e.role, p_active: !e.active })
     }
     case 'saveEmployee': {
       const e = a.employee
       const old = before.employees.find((x) => x.id === e.id)
-      // A barber is a profile, never an auth user: no email, no password, no edge function.
-      if (e.role === 'barber')
+      // A barber or employee is a profile, never an auth user: no email, no password, no edge function.
+      if (isProfile(e.role))
         return (async () => {
-          const id = (await rpc('save_barber', { p_id: old ? e.id : null, p_name: e.name, p_phone: e.phone, p_active: e.active })) as string
+          const id = (await rpc('save_barber', { p_id: old ? e.id : null, p_name: e.name, p_phone: e.phone, p_active: e.active, p_role: e.role })) as string
           await staffPay(id, e)
         })()
       if (!old)
@@ -245,6 +246,7 @@ export function errorKey(e: unknown): Key {
   const m = e instanceof Error ? e.message : String((e as { message?: string })?.message ?? e)
   if (m.includes('email_taken')) return 'auth.emailTaken'
   if (m.includes('owner_locked')) return 'err.ownerLocked'
+  if (m.includes('shop_account_exists')) return 'err.shopExists'
   if (m.includes('duplicate_absence')) return 'err.duplicateAbsence'
   if (m.includes('payroll_locked')) return 'err.payrollLocked'
   if (m.includes('already_paid')) return 'err.alreadyPaid'
@@ -269,7 +271,8 @@ export async function resolveSession(): Promise<Who | null> {
   if (!uid) return null
   const { data: st } = await supabase.from('staff').select('id, role, active').eq('id', uid).maybeSingle()
   if (!st) return null
-  return st.active ? { staffId: st.id, owner: st.role === 'admin' } : null
+  // Only the owner and the shared shop account sign in; a stale barber/employee login gets nothing.
+  return st.active && (st.role === 'admin' || st.role === 'operator') ? { staffId: st.id, owner: st.role === 'admin' } : null
 }
 
 /** An admin signs in with an email; either account level may use its profile phone. */

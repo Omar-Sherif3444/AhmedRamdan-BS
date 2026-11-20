@@ -38,6 +38,9 @@ Deno.serve(async (req) => {
     const email = body.email?.trim().toLowerCase()
     const name = body.name?.trim()
     if (!email || !EMAIL.test(email) || (body.password ?? '').length < 6 || !name || !ROLES.includes(body.role)) return json({ error: 'invalid_input' }, 400)
+    // Exactly one shared shop account; everyone else is a login-less profile.
+    const { count } = await admin.from('staff').select('id', { count: 'exact', head: true }).eq('role', 'operator')
+    if ((count ?? 0) > 0) return json({ error: 'shop_account_exists' }, 400)
     const { data, error } = await admin.auth.admin.createUser({ email, password: body.password, email_confirm: true })
     if (error || !data.user) return json({ error: error?.message.toLowerCase().includes('already') ? 'email_taken' : 'create_failed' }, 400)
     const { error: rowError } = await admin.from('staff').insert({

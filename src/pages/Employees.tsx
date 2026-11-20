@@ -6,7 +6,7 @@ import { newId } from '../lib/reducer'
 import { EMAIL, normEmail } from '../lib/auth'
 import { Field, Modal, VisitBadge, initials } from '../components/ui'
 import { useTxRows } from './Transactions'
-import type { Employee, Role } from '../types'
+import { PROFILE_ROLES, isPaid, isProfile, type Employee, type Role } from '../types'
 
 const PHONE = /^\+?[\d\s-]{7,15}$/
 
@@ -19,8 +19,10 @@ export default function Employees() {
 
   const stats = useMemo(() => new Map(state.employees.map((e) => [e.id, summary(state.visits.filter((v) => v.employeeId === e.id))])), [state.employees, state.visits])
   const shown = state.employees.find((e) => e.id === profile)
-  const accounts = state.employees.filter((e) => e.role !== 'barber')
-  const barbers = state.employees.filter((e) => e.role === 'barber')
+  const accounts = state.employees.filter((e) => !isProfile(e.role))
+  const barbers = state.employees.filter((e) => isProfile(e.role))
+  // One shared shop account for the front desk; the button disappears once it exists.
+  const hasShop = accounts.some((e) => e.role === 'operator')
   const card = (e: Employee) => {
     const s = stats.get(e.id)!
     const locked = e.role === 'admin' || e.id === state.currentUserId
@@ -45,7 +47,7 @@ export default function Employees() {
             <dt>{t('em.revenue')}</dt>
             <dd>{i18n.money(s.revenue)}</dd>
           </div>
-          {e.role !== 'admin' && (
+          {isPaid(e.role) && (
             <div>
               <dt>{t('py.dailyWage')}</dt>
               <dd>{e.dailyWage !== undefined ? i18n.money(e.dailyWage) : t('em.noWage')}</dd>
@@ -75,9 +77,11 @@ export default function Employees() {
         <p className="muted small">
           <Info size={14} aria-hidden /> {t('em.note')}
         </p>
-        <button className="btn primary" onClick={() => setEditing('operator')}>
-          <Plus size={16} aria-hidden /> {t('em.addOperator')}
-        </button>
+        {!hasShop && (
+          <button className="btn primary" onClick={() => setEditing('operator')}>
+            <Plus size={16} aria-hidden /> {t('em.addOperator')}
+          </button>
+        )}
       </div>
       <h2>{t('em.accounts')}</h2>
       <div className="emp-grid">{accounts.map(card)}</div>
@@ -128,7 +132,7 @@ function Profile({ employee }: { employee: Employee }) {
           <dt>{t('c.phone')}</dt>
           <dd dir="ltr">{employee.phone || t('c.none')}</dd>
         </div>
-        {employee.role !== 'barber' && (
+        {!isProfile(employee.role) && (
           <div>
             <dt>{t('em.email')}</dt>
             <dd dir="ltr">{employee.email}</dd>
@@ -138,7 +142,7 @@ function Profile({ employee }: { employee: Employee }) {
           <dt>{t('em.startDate')}</dt>
           <dd>{i18n.day(employee.joinedAt)}</dd>
         </div>
-        {employee.role !== 'admin' && (
+        {isPaid(employee.role) && (
           <>
             <div>
               <dt>{t('py.dailyWage')}</dt>
@@ -210,9 +214,11 @@ function EmployeeForm({ employee, role, onDone }: { employee?: Employee; role: R
     daysOff: employee?.daysOff ?? [],
   })
   const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string; password?: string; dailyWage?: string; joinedAt?: string }>({})
-  const paid = role !== 'admin'
-  // Only admin and operator sign in; a barber is a name on the floor.
-  const login = role !== 'barber'
+  // Barber and employee are interchangeable for a profile; account roles are fixed.
+  const [kind, setKind] = useState<Role>(role)
+  const paid = isPaid(kind)
+  // Only the owner and the shop account sign in; a barber or employee is a name on the floor.
+  const login = !isProfile(kind)
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -220,7 +226,7 @@ function EmployeeForm({ employee, role, onDone }: { employee?: Employee; role: R
     if (f.name.trim().length < 2) errs.name = t('err.required')
     if (f.phone.trim() && !PHONE.test(f.phone.trim())) errs.phone = t('err.phone')
     if (!login) {
-      // No sign-in fields for a barber.
+      // No sign-in fields for a profile.
     } else if (!EMAIL.test(f.email.trim())) errs.email = t('auth.emailInvalid')
     else if (state.employees.some((x) => x.id !== employee?.id && normEmail(x.email) === normEmail(f.email))) errs.email = t('auth.emailTaken')
     // A new employee needs a password; when editing, empty keeps the current one.
@@ -237,7 +243,7 @@ function EmployeeForm({ employee, role, onDone }: { employee?: Employee; role: R
         active: employee?.active ?? true,
         name: f.name.trim(),
         phone: f.phone.trim(),
-        role,
+        role: kind,
         email: login ? f.email.trim() : '',
         password: (login && f.password) || undefined,
         joinedAt: f.joinedAt,
@@ -267,9 +273,21 @@ function EmployeeForm({ employee, role, onDone }: { employee?: Employee; role: R
           </Field>
         </>
       )}
-      <p className="muted small">
-        {t('em.role')}: {t(`role.${role}`)}
-      </p>
+      {login ? (
+        <p className="muted small">
+          {t('em.role')}: {t(`role.${kind}`)}
+        </p>
+      ) : (
+        <Field label={t('em.role')}>
+          <select value={kind} onChange={(e) => setKind(e.target.value as Role)}>
+            {PROFILE_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {t(`role.${r}`)}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
       <div className="grid-2">
         {paid && (
           <Field label={t('em.dailyWage')} error={errors.dailyWage} hint={employee ? t('em.wageHint') : undefined}>

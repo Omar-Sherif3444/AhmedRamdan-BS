@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { CalendarX, Info, Pencil, Plus, XCircle } from 'lucide-react'
+import { isPaid } from '../types'
 import { useStore } from '../store'
 import { dayKey, monthStart, parseDay } from '../lib/calc'
 import { Card, Empty, Field, Modal } from '../components/ui'
@@ -13,7 +14,7 @@ export default function Attendance() {
   const [employee, setEmployee] = useState('')
   const [showCancelled, setShowCancelled] = useState(false)
   const [editing, setEditing] = useState<Absence | 'new' | null>(null)
-  const staff = state.employees.filter((e) => e.role !== 'admin')
+  const staff = state.employees.filter((e) => isPaid(e.role))
   const name = (id: string) => state.employees.find((e) => e.id === id)?.name ?? ''
 
   const rows = useMemo(
@@ -121,7 +122,7 @@ export default function Attendance() {
 function AbsenceForm({ absence, defaultEmployee, onDone }: { absence?: Absence; defaultEmployee: string; onDone: () => void }) {
   const { state, dispatch, toast, i18n } = useStore()
   const { t } = i18n
-  const staff = state.employees.filter((e) => e.role !== 'admin' && (e.active || e.id === absence?.employeeId))
+  const staff = state.employees.filter((e) => isPaid(e.role) && (e.active || e.id === absence?.employeeId))
   const [f, setF] = useState({ employeeId: absence?.employeeId ?? defaultEmployee, day: absence?.day ?? dayKey(new Date()), reason: absence?.reason ?? '' })
   const [errors, setErrors] = useState<{ employeeId?: string; day?: string }>({})
   const [confirmCancel, setConfirmCancel] = useState(false)

@@ -3,6 +3,16 @@
 Branch `fo2sh`. **The build is green again**: `npx tsc --noEmit` → 0 errors, `npm test` → 16/16,
 `npm run lint` → 0 errors, `npm run build` passes, `npm audit` → 0 vulnerabilities.
 
+## 0a. Account model (2026-11-20, live)
+
+Only two logins exist: the **owner (admin)**, unchanged, and **one shared shop account (operator)**
+for the front-desk computer. Barbers and employees are login-less profiles the owner manages
+(, role  or the new ). The barber's old login was deleted;
+the profile and its visits stay. The front desk sees all customers and today's visits (in progress or
+started today, Cairo time); older history and money stay owner-only. The shop account is not on
+payroll or attendance.  refuses a second shop account. PIN sign-in is deferred.
+Migrations: , .
+
 ## 0. Update — §3 items 1–8, 10 and part of 12 are done
 
 - **Routing.** `main.tsx` now serves two lazy bundles: `#/` → `Public.tsx` alone (no store, no
