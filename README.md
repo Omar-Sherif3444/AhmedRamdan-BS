@@ -14,26 +14,39 @@ nothing here should reach into it.
 
 ## The state this was handed over in
 
-It was set up on **2026-11-20** and nothing has been built yet. `products/` is empty and
-`SHIPPED.md` has no rows.
+Set up **2026-11-20**. One product is mid-build: `salon`, the existing barbershop system, found
+and cloned. `SHIPPED.md` still has no rows — nothing has shipped yet.
 
-**The salon already has something running, and the customer wants modifications — but none of it
-is on this machine.** A search of the whole home folder found no salon, barber or booking project,
-no matching repository, and no external volume holding one. So the first job is not to build: it
-is to get the existing product here.
+### Assembling the layout
 
-## First moves for the agent taking over
+This repository and the product are **two separate git repositories**, by design: `products/*` is
+ignored here, so product code never enters the factory's history and the factory never enters the
+product's. They are pushed as two unrelated branches of the same GitHub repository. To get the
+working layout:
 
-1. **Ask the owner where the current product lives** — a git remote to clone into
-   `products/<slug>/`, a folder to copy, or another machine. Do not start a rewrite because the
-   source is missing; a salon with a running system wants its system changed, not replaced.
-2. **Ask what the modifications are.** `ideas/inbox/001-salon-modifications.md` is a stub: it
-   records what is known, and every blank in it is a question for the owner. Fill it from their
-   answers, do not invent requirements.
-3. Only then run the loop in `AGENTS.md`: `node bin/factory.mjs next`, pick a blueprint, and go.
+```sh
+git clone -b factory https://github.com/Omar-Sherif3444/AhmedRamdan-BS.git ahmed-semsem
+cd ahmed-semsem
+git clone -b fo2sh https://github.com/Omar-Sherif3444/AhmedRamdan-BS.git products/salon
+```
 
-If the existing product turns out not to exist after all, say so plainly and agree a fresh build
-with the owner before scaffolding one.
+Then read **`products/salon/HANDOFF.md`** before anything else. It is the real starting point: it
+lists what is done, what is left in the order to do it, and how to stand up a local Supabase
+backend from the migrations. No credentials from anyone's hosting account are needed.
+
+### What the agent taking over should know
+
+- **The product's build is deliberately red** — 69 `tsc` errors, 9/12 tests. `lint` is green.
+  Every error is a known step in an unfinished refactor and is enumerated in `HANDOFF.md`.
+  Do not treat it as a broken checkout.
+- `products/salon/SPEC.md` is the agreed scope, `DESIGN.md` holds binding UI numbers (touch
+  targets, contrast, performance budget, Arabic/RTL rules), and `BACKLOG.md` lists defects
+  inherited from the original product.
+- `ideas/inbox/001-salon-modifications.md` was a stub full of questions; the answers are recorded
+  in it now. Do not re-ask them.
+- The CLI link to the client's **live production** Supabase project was removed, and
+  `supabase/.temp/` is no longer tracked. Never point `supabase db push --linked` at the salon's
+  running database.
 
 ## Run a cycle
 
