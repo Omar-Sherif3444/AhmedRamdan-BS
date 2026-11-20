@@ -7,11 +7,11 @@ Branch `fo2sh`. **The build is green again**: `npx tsc --noEmit` → 0 errors, `
 
 Only two logins exist: the **owner (admin)**, unchanged, and **one shared shop account (operator)**
 for the front-desk computer. Barbers and employees are login-less profiles the owner manages
-(, role  or the new ). The barber's old login was deleted;
+(`save_barber(..., p_role)`, role `barber` or the new `employee`). The barber's old login was deleted;
 the profile and its visits stay. The front desk sees all customers and today's visits (in progress or
 started today, Cairo time); older history and money stay owner-only. The shop account is not on
-payroll or attendance.  refuses a second shop account. PIN sign-in is deferred.
-Migrations: , .
+payroll or attendance. `admin-users` refuses a second shop account. PIN sign-in is deferred.
+Migrations: `20261120210000_staff_role_employee.sql`, `20261120210100_shared_shop_account.sql`.
 
 ## 0. Update — §3 items 1–8, 10 and part of 12 are done
 
