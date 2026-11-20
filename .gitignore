@@ -5,3 +5,11 @@ dist
 .env*
 .env.supabase
 .env*.local
+
+# Factory gate logs (local artefacts)
+.factory/
+
+# Supabase CLI local state. Committing .temp is how a production project link
+# leaks into a repo; never track it.
+supabase/.temp/
+supabase/.branches/

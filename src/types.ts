@@ -13,17 +13,17 @@ export interface Seat {
   label: string
   /** The in-progress visit while occupied. */
   visitId?: string
-  /** When the current customer sat down (public, for the customer view's elapsed time). */
+  /** When the current customer sat down. */
   since?: string
-  /** The signed-in customer who reserved this sofa seat online. */
-  reservedBy?: string
-  /** When that online reservation expires (1 hour after booking). */
-  reservedUntil?: string
-  /** First name of the customer who reserved online (public). */
-  reservedName?: string
 }
 
-export type Role = 'owner' | 'barber' | 'receptionist'
+/**
+ * Two account levels, plus barbers. A barber is a staff row with no login at all:
+ * no `auth.users` entry, no email, no PIN. The operator records what they did.
+ */
+export type Role = 'admin' | 'operator' | 'barber'
+/** The roles that can actually sign in. */
+export const ACCOUNT_ROLES = ['admin', 'operator'] as const
 
 export interface Employee {
   id: string
@@ -66,9 +66,13 @@ export type VisitStatus = 'in_progress' | 'completed' | 'cancelled'
 export interface Visit {
   id: string
   customerId: string
+  /** The barber who did the work. */
   employeeId: string
   seatId: string
+  /** Deprecated: the first of `serviceIds`. Kept while older pages still read it. */
   serviceId: string
+  /** Everything done for this customer. The amount is the sum of their prices. */
+  serviceIds: string[]
   amount: number
   method: PaymentMethod
   status: VisitStatus
@@ -103,6 +107,11 @@ export interface Data {
   holidays: Holiday[]
   wages: WageRate[]
   deductions: Deduction[]
+  /**
+   * People waiting right now, as the operator counts them with + / −.
+   * Server-derived from today's `waiting_events`; never written directly.
+   */
+  waiting: number
 }
 
 export type ExpenseKind = 'shop' | 'personal'
@@ -166,10 +175,8 @@ export interface PayrollRow {
 export interface State extends Data {
   settings: Settings
   currentUserId: string
-  /** Staff session (owner, barbers, reception). */
+  /** Staff session (admin or operator). */
   signedIn: boolean
-  /** Signed-in customer, if any. */
-  customerId: string | null
   notices: Notice[]
 }
 

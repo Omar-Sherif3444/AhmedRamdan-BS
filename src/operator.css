@@ -1,0 +1,480 @@
+/*
+ * Operator (front desk). Dark, dense, built for a shop-floor tablet and a one-handed phone.
+ * Logical properties only — no left/right/margin-left anywhere in this file (DESIGN.md, RTL).
+ * Sizes follow the DESIGN.md table: chips 64 px, rows 64 px, waiting +/- 88 px with a 28 px gap.
+ */
+.op {
+  --op-bg: #0b0b0c;
+  --op-surface: #15151a;
+  --op-surface-2: #1e1e25;
+  --op-surface-3: #27272f;
+  --op-line: #32323b;
+  --op-ink: #f5f5f4;
+  --op-ink-2: #a8a29e;
+  --op-accent: #c0172a;
+  --op-accent-2: #e0203a;
+  --op-on-accent: #ffffff;
+  --op-ok: #22c55e;
+  --op-gap: 12px;
+  --op-chip: 64px;
+  --op-row: 64px;
+  --op-big: clamp(76px, 23vw, 96px);
+  --op-r: 14px;
+
+  color-scheme: dark;
+  display: flex;
+  flex-direction: column;
+  gap: var(--op-gap);
+  background: var(--op-bg);
+  color: var(--op-ink);
+  border-radius: 18px;
+  padding: 12px;
+  letter-spacing: 0;
+  line-height: 1.75;
+  font-size: 17px;
+  min-block-size: 70vh;
+}
+.op *,
+.op *::before,
+.op *::after {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+.op button {
+  font: inherit;
+  letter-spacing: 0;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.op button:focus-visible,
+.op input:focus-visible {
+  outline: 3px solid #fafaf9;
+  outline-offset: 2px;
+}
+.op button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.op-h {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.op-k {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--op-ink-2);
+  line-height: 1.4;
+}
+.op-muted {
+  color: var(--op-ink-2);
+  font-size: 14px;
+}
+.op-count {
+  display: inline-block;
+  min-inline-size: 28px;
+  padding-inline: 8px;
+  border-radius: 999px;
+  background: var(--op-surface-3);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  font-size: 15px;
+}
+
+/* ---------- Entry row: permanently visible, tappable in any order ---------- */
+.op-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--op-surface);
+  border: 1px solid var(--op-line);
+  border-radius: var(--op-r);
+  padding: 12px;
+}
+.op-entry-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.op-seat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-block-size: 48px;
+  padding-inline: 14px;
+  border: 1px solid var(--op-line);
+  border-radius: 999px;
+  background: var(--op-surface-2);
+}
+.op-seat-k {
+  font-size: 14px;
+  color: var(--op-ink-2);
+}
+.op-seat-v {
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.op-seat-off {
+  color: var(--op-accent-2);
+  font-size: 14px;
+}
+.op-name {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.op-input {
+  min-block-size: 56px;
+  inline-size: 100%;
+  padding-inline: 14px;
+  font: inherit;
+  letter-spacing: 0;
+  color: var(--op-ink);
+  background: var(--op-surface-2);
+  border: 1px solid var(--op-line);
+  border-radius: 12px;
+  text-align: start;
+}
+.op-input::placeholder {
+  color: #78716c;
+}
+.op-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.op-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.op-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-block-size: var(--op-chip);
+  min-inline-size: 104px;
+  padding-inline: 18px;
+  background: var(--op-surface-2);
+  border: 1px solid var(--op-line);
+  border-radius: var(--op-r);
+  transition: background 120ms linear;
+}
+.op-chip-t {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.op-chip-s {
+  font-size: 14px;
+  color: var(--op-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.op-chip[aria-pressed='true'] {
+  background: var(--op-accent);
+  border-color: var(--op-accent-2);
+  color: var(--op-on-accent);
+}
+.op-chip[aria-pressed='true'] .op-chip-s {
+  color: #fee2e2;
+}
+
+/* ---------- In-progress cards ---------- */
+.op-live {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* A row shifting after Done must not swallow the next tap (DESIGN.md: 0.2 s). */
+.op-live.settling {
+  pointer-events: none;
+}
+.op-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  min-block-size: var(--op-row);
+  padding-block: 8px;
+  padding-inline: 12px;
+  background: var(--op-surface);
+  border: 1px solid var(--op-line);
+  border-radius: var(--op-r);
+}
+.op-card.busy {
+  opacity: 0.5;
+}
+.op-card-main {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  flex: 1 1 11rem;
+}
+.op-card-name {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.op-card-sub {
+  font-size: 14px;
+  color: var(--op-ink-2);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.op-card-min {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: var(--op-ink-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.op-amount {
+  min-block-size: 48px;
+  min-inline-size: 88px;
+  padding-inline: 12px;
+  margin-inline-start: auto;
+  background: var(--op-surface-2);
+  border: 1px dashed var(--op-line);
+  border-radius: 12px;
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+}
+.op-pay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+.op-pay-in {
+  inline-size: 7rem;
+  min-block-size: 48px;
+}
+.op-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 48px;
+  block-size: 48px;
+  background: var(--op-surface-2);
+  border: 1px solid var(--op-line);
+  border-radius: 12px;
+}
+.op-done {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-block-size: 56px;
+  min-inline-size: 112px;
+  padding-inline: 18px;
+  background: #166534;
+  border: 1px solid #22c55e;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.op-empty {
+  margin: 0;
+  padding-block: 18px;
+  padding-inline: 12px;
+  color: var(--op-ink-2);
+  font-size: 15px;
+  background: var(--op-surface);
+  border: 1px dashed var(--op-line);
+  border-radius: var(--op-r);
+  text-align: start;
+}
+
+/* ---------- Dock: primary action + waiting counter.
+   Phone: sticky in the bottom third, where the thumb already is. ---------- */
+.op-dock {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-block-start: auto;
+  padding: 10px;
+  padding-block-end: calc(10px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--op-bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--op-line);
+  border-radius: 16px;
+}
+.op-start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-block-size: 68px;
+  inline-size: 100%;
+  background: var(--op-accent);
+  border: 1px solid var(--op-accent-2);
+  border-radius: var(--op-r);
+  color: var(--op-on-accent);
+  font-size: 20px;
+  font-weight: 600;
+}
+.op-start-sum {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+.op-hint {
+  margin: 0;
+  min-block-size: 1.5em;
+  font-size: 14px;
+  color: var(--op-ink-2);
+  text-align: center;
+}
+.op-counter {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px; /* >= 24 pt between the two big targets */
+  padding-block: 10px;
+}
+.op-couch {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  inline-size: 100%;
+  block-size: 100%;
+  color: #4b4b55;
+}
+.op-big {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--op-big);
+  block-size: var(--op-big);
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--op-surface-3);
+  border: 2px solid var(--op-line);
+}
+.op-big:active:not(:disabled) {
+  background: var(--op-accent);
+  border-color: var(--op-accent-2);
+}
+.op-wait {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-inline-size: 4ch;
+}
+.op-wait-n {
+  font-size: clamp(48px, 15vw, 76px);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.op-wait-k {
+  font-size: 15px;
+  color: var(--op-ink-2);
+  line-height: 1.4;
+}
+
+/* ---------- Undo snackbar: 8 s, persists until acted on.
+   Kept off the bottom edge on a phone so it can never cover the +/- pair. ---------- */
+.op-snack-wrap {
+  position: fixed;
+  inset-block-start: 10px;
+  inset-inline: 12px;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.op-snack {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  pointer-events: auto;
+  min-block-size: 60px;
+  max-inline-size: 36rem;
+  padding-block: 8px;
+  padding-inline: 16px 10px;
+  background: #27272f;
+  border: 1px solid var(--op-line);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+  font-size: 16px;
+  color: var(--op-ink);
+}
+.op-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 48px;
+  min-inline-size: 96px;
+  justify-content: center;
+  padding-inline: 14px;
+  background: var(--op-surface-2);
+  border: 1px solid var(--op-line);
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* ---------- Tablet: the bottom edge is hostile territory, so the dock becomes a side rail
+   sitting in the middle-upper third. ---------- */
+@media (min-width: 768px) {
+  .op {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 34vw, 400px);
+    grid-template-areas: 'entry rail' 'live rail';
+    align-content: start;
+    padding: 16px;
+    gap: 16px;
+  }
+  .op-entry {
+    grid-area: entry;
+  }
+  .op-live {
+    grid-area: live;
+  }
+  .op-dock {
+    grid-area: rail;
+    position: sticky;
+    inset-block-start: 16px;
+    inset-block-end: auto;
+    margin-block-start: 0;
+    align-self: start;
+    gap: 12px;
+    padding: 14px;
+  }
+  .op-snack-wrap {
+    inset-block-start: auto;
+    inset-block-end: 16px;
+  }
+  .op-chip {
+    min-inline-size: 124px;
+  }
+  .op-big {
+    --op-big: 92px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .op *,
+  .op *::before,
+  .op *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

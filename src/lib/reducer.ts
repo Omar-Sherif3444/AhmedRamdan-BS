@@ -6,19 +6,23 @@ export type Action =
   | {
       type: 'register'
       seatId: string
+      /** Optional: an empty name becomes "عميل N" on the server. */
       name: string
-      phone: string
+      phone?: string
       employeeId: string
-      serviceId: string
-      amount: number
+      /** Everything being done for this customer. The server prices it. */
+      serviceIds: string[]
+      /** Only set when correcting a price; otherwise the service prices decide. */
+      amount?: number
       method: PaymentMethod
-      expectNext: boolean
+      expectNext?: boolean
       now: string
     }
   | { type: 'complete' | 'release'; seatId: string; now: string }
   | { type: 'setExpectNext'; seatId: string; value: boolean }
   | { type: 'reserve' | 'cancelReservation' | 'outOfService' | 'restore'; seatId: string }
-  | { type: 'customerReserve' | 'customerCancel'; seatId: string; customerId: string }
+  | { type: 'waitingBump'; delta: 1 | -1 }
+  | { type: 'undoLast' }
   | { type: 'updatePayment'; visitId: string; amount: number; method: PaymentMethod }
   | { type: 'updateVisit'; visitId: string; employeeId: string; serviceId: string; amount: number; method: PaymentMethod }
   | { type: 'deleteVisit'; visitId: string }
@@ -27,7 +31,7 @@ export type Action =
   | { type: 'toggleEmployee'; id: string }
   | { type: 'saveService'; service: Service }
   | { type: 'settings'; patch: Partial<Settings> }
-  | { type: 'session'; staffId: string | null; customerId: string | null }
+  | { type: 'session'; staffId: string | null }
   | { type: 'data'; data: Data; shop: Pick<Settings, 'shopName' | 'currency'> }
   | { type: 'readNotices' }
   | { type: 'addExpense'; amount: number; kind: ExpenseKind; description: string; spentAt?: string; employeeId: string; now: string }
@@ -67,7 +71,7 @@ export function reducer(s: State, a: Action): State {
     case 'register': {
       if (!seat || (seat.status !== 'available' && seat.status !== 'reserved')) return s
       const name = a.name.trim()
-      const phone = a.phone.trim()
+      const phone = (a.phone ?? '').trim()
       // Same matching as the register_visit function: by phone, else by exact name.
       let customer =
         (phone && s.customers.find((c) => c.phone === phone)) ||
@@ -85,12 +89,14 @@ export function reducer(s: State, a: Action): State {
         customerId: customer.id,
         employeeId: a.employeeId,
         seatId: seat.id,
-        serviceId: a.serviceId,
-        amount: a.amount,
+        serviceId: a.serviceIds[0] ?? '',
+        serviceIds: a.serviceIds,
+        // Optimistic only: the server recomputes this from the catalogue prices.
+        amount: a.amount ?? a.serviceIds.reduce((t, sid) => t + (s.services.find((x) => x.id === sid)?.price ?? 0), 0),
         method: a.method,
         status: 'in_progress',
         startedAt: a.now,
-        expectNext: a.expectNext,
+        expectNext: a.expectNext ?? false,
       }
       const next = setSeat({ ...s, customers, visits: [...s.visits, visit] }, seat.id, {
         status: 'occupied',
@@ -114,18 +120,12 @@ export function reducer(s: State, a: Action): State {
     case 'reserve':
       return seat?.status === 'available' ? setSeat(s, seat.id, { status: 'reserved' }) : s
     case 'cancelReservation':
-      return seat?.status === 'reserved' ? setSeat(s, seat.id, { status: 'available', reservedBy: undefined, reservedUntil: undefined, reservedName: undefined }) : s
-    // A signed-in customer holds one available sofa seat at a time (same rules as reserve_sofa_seat).
-    case 'customerReserve':
-      if (seat?.kind !== 'sofa' || seat.status !== 'available' || s.seats.some((x) => x.reservedBy === a.customerId)) return s
-      return setSeat(s, seat.id, {
-        status: 'reserved',
-        reservedBy: a.customerId,
-        reservedUntil:new Date(Date.now() + 3600e3).toISOString(),
-        reservedName: s.customers.find((c) => c.id === a.customerId)?.name.trim().split(/\s+/)[0],
-      })
-    case 'customerCancel':
-      return seat?.status === 'reserved' && seat.reservedBy === a.customerId ? setSeat(s, seat.id, { status: 'available', reservedBy: undefined, reservedUntil: undefined, reservedName: undefined }) : s
+      return seat?.status === 'reserved' ? setSeat(s, seat.id, { status: 'available' }) : s
+    // The waiting count is a server-side sum of today's events; these are optimistic only.
+    case 'waitingBump':
+      return { ...s, waiting: Math.max(0, s.waiting + a.delta) }
+    case 'undoLast':
+      return s
     case 'outOfService':
       if (!seat || seat.status === 'occupied') return s
       return notice(setSeat(s, seat.id, { status: 'out_of_service' }), 'n.outOfService', seatParam)
@@ -148,8 +148,8 @@ export function reducer(s: State, a: Action): State {
       return { ...s, employees: upsert(s.employees, a.employee) }
     case 'toggleEmployee': {
       const e = s.employees.find((x) => x.id === a.id)
-      // The owner and the signed-in user stay active so the shop always has someone in charge.
-      if (!e || e.role === 'owner' || e.id === s.currentUserId) return s
+      // The admin and the signed-in user stay active so the shop always has someone in charge.
+      if (!e || e.role === 'admin' || e.id === s.currentUserId) return s
       return { ...s, employees: upsert(s.employees, { ...e, active: !e.active }) }
     }
     case 'saveService':
@@ -157,7 +157,7 @@ export function reducer(s: State, a: Action): State {
     case 'settings':
       return { ...s, settings: { ...s.settings, ...a.patch } }
     case 'session':
-      return { ...s, signedIn: !!a.staffId, currentUserId: a.staffId ?? '', customerId: a.customerId }
+      return { ...s, signedIn: !!a.staffId, currentUserId: a.staffId ?? '' }
     case 'data':
       return { ...s, ...a.data, settings: { ...s.settings, ...a.shop } }
     case 'readNotices':

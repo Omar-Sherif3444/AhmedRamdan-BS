@@ -8,7 +8,7 @@ import type { Absence, Customer, Data, DateRange, Deduction, Employee, Expense, 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>
 
-const seat = (r: Row): Seat => ({ id: r.id, kind: r.kind, number: r.number, status: r.status, label: r.label, visitId: r.visit_id ?? undefined, since: r.since ?? undefined, reservedBy: r.reserved_by ?? undefined, reservedUntil: r.reserved_until ?? undefined, reservedName: r.reserved_name ?? undefined })
+const seat = (r: Row): Seat => ({ id: r.id, kind: r.kind, number: r.number, status: r.status, label: r.label, visitId: r.visit_id ?? undefined, since: r.since ?? undefined })
 const employee = (r: Row): Employee => ({ id: r.id, name: r.name, role: r.role, phone: r.phone, active: r.active, joinedAt: r.joined_at, email: r.email, daysOff: r.days_off ?? [] })
 const expense = (r: Row): Expense => ({ id: r.id, employeeId: r.employee_id, kind: r.kind, amount: Number(r.amount), description: r.description, spentAt: r.spent_at, createdAt: r.created_at, updatedAt: r.updated_at ?? undefined })
 const absence = (r: Row): Absence => ({ id: r.id, employeeId: r.employee_id, day: r.day, reason: r.reason, createdAt: r.created_at, cancelledAt: r.cancelled_at ?? undefined })
@@ -23,6 +23,8 @@ const visit = (r: Row): Visit => ({
   employeeId: r.employee_id,
   seatId: r.seat_id,
   serviceId: r.service_id ?? '',
+  // Filled from visit_services by loadData; a visit always has at least one.
+  serviceIds: r.serviceIds ?? (r.service_id ? [r.service_id] : []),
   amount: Number(r.amount),
   method: r.method,
   status: r.status,
@@ -46,7 +48,7 @@ export async function loadData(): Promise<{ data: Data; shop: Pick<Settings, 'sh
   // shortcut: the browser loads ~13 months of visits for the dashboard; move reports to server-side aggregates once history is much larger.
   const since = new Date(Date.now() - 400 * 864e5).toISOString()
   // Row-level security decides what comes back: the owner gets everything, an employee only their own records.
-  const [settings, seats, services, staff, customers, visits, expenses, absences, holidays, wages, deductions] = await Promise.all([
+  const [settings, seats, services, staff, customers, visits, expenses, absences, holidays, wages, deductions, visitServices, waiting] = await Promise.all([
     supabase.from('settings').select('*').single(),
     all('seats', (q) => q.order('kind', { ascending: false }).order('number')),
     all('services', (q) => q.order('created_at')),
@@ -58,7 +60,16 @@ export async function loadData(): Promise<{ data: Data; shop: Pick<Settings, 'sh
     all('holidays', (q) => q.order('day')),
     all('wage_rates', (q) => q.order('effective_from')),
     all('salary_deductions', (q) => q.order('created_at', { ascending: false })),
+    all('visit_services'),
+    supabase.rpc('waiting_count'),
   ])
+  // Group the join rows once, so each visit carries every service that was done.
+  const byVisit = new Map<string, string[]>()
+  for (const r of visitServices) {
+    const list = byVisit.get(r.visit_id)
+    if (list) list.push(r.service_id)
+    else byVisit.set(r.visit_id, [r.service_id])
+  }
   const wageRows = wages.map(wage)
   // Rates are ordered oldest first and never start in the future, so the last one is the current wage.
   const current = new Map(wageRows.map((w) => [w.employeeId, w.dailyWage]))
@@ -69,12 +80,13 @@ export async function loadData(): Promise<{ data: Data; shop: Pick<Settings, 'sh
       services: services.map(service),
       employees: staff.map((r) => ({ ...employee(r), dailyWage: current.get(r.id) })),
       customers: customers.map(customer),
-      visits: visits.map(visit),
+      visits: visits.map((r) => visit({ ...r, serviceIds: byVisit.get(r.id) })),
       expenses: expenses.map(expense),
       absences: absences.map(absence),
       holidays: holidays.map(holiday),
       wages: wageRows,
       deductions: deductions.map(deduction),
+      waiting: Number(waiting.data ?? 0),
     },
     shop: { shopName: settings.data.shop_name, currency: settings.data.currency },
   }
@@ -130,15 +142,17 @@ const SEAT_STATUS = { reserve: 'reserved', cancelReservation: 'available', outOf
 export function run(a: Action, before: State): Promise<unknown> | null {
   switch (a.type) {
     case 'register':
+      // No amount is sent: the server sums the chosen services' catalogue prices.
+      // The operator corrects a price afterwards with `updatePayment`.
       return rpc('register_visit', {
         p_seat: a.seatId,
         p_name: a.name,
-        p_phone: a.phone,
+        p_phone: a.phone ?? '',
         p_employee: a.employeeId,
-        p_service: a.serviceId || null,
-        p_amount: a.amount,
+        p_services: a.serviceIds,
+        p_amount: a.amount ?? null,
         p_method: a.method,
-        p_expect_next: a.expectNext,
+        p_expect_next: a.expectNext ?? false,
       })
     case 'complete':
     case 'release':
@@ -150,10 +164,10 @@ export function run(a: Action, before: State): Promise<unknown> | null {
     case 'outOfService':
     case 'restore':
       return rpc('set_seat_status', { p_seat: a.seatId, p_status: SEAT_STATUS[a.type] })
-    case 'customerReserve':
-      return rpc('reserve_sofa_seat', { p_seat: a.seatId })
-    case 'customerCancel':
-      return rpc('cancel_my_reservation', { p_seat: a.seatId })
+    case 'waitingBump':
+      return rpc('bump_waiting', { p_delta: a.delta })
+    case 'undoLast':
+      return rpc('undo_waiting', {})
     case 'updatePayment':
       return rpc('update_payment', { p_visit: a.visitId, p_amount: a.amount, p_method: a.method })
     case 'updateVisit':
@@ -232,33 +246,29 @@ export function errorKey(e: unknown): Key {
 
 // --- Authentication ----------------------------------------------------------------------
 
-// Customers sign in with a phone number; Supabase Auth needs an email, so each phone maps to a private address.
-const phoneEmail = (phone: string) => `${normPhone(phone).replace(/^\+/, '')}@phone.ahmed-ramdan-barbershop.vercel.app`
-
 export interface Who {
   staffId: string | null
-  customerId: string | null
+  /** True for an admin; false for an operator. */
   owner: boolean
 }
 
-/** Who the current session belongs to; null when signed out, inactive staff, or no profile. */
+/** Who the current session belongs to; null when signed out or the account is deactivated. */
 export async function resolveSession(): Promise<Who | null> {
   const { data } = await supabase.auth.getSession()
   const uid = data.session?.user.id
   if (!uid) return null
   const { data: st } = await supabase.from('staff').select('id, role, active').eq('id', uid).maybeSingle()
-  if (st) return st.active ? { staffId: st.id, customerId: null, owner: st.role === 'owner' } : null
-  const { data: cu } = await supabase.from('customers').select('id').eq('user_id', uid).maybeSingle()
-  return cu ? { staffId: null, customerId: cu.id, owner: false } : null
+  if (!st) return null
+  return st.active ? { staffId: st.id, owner: st.role === 'admin' } : null
 }
 
-/** One sign-in for everyone: an email, a staff member's profile phone, or a customer phone. */
+/** An admin signs in with an email; either account level may use its profile phone. */
 export async function signIn(id: string, password: string): Promise<Who | { error: Key }> {
   let email = id.includes('@') ? normEmail(id) : ''
   if (!email) {
-    // Staff accounts are email-based; a phone on a staff profile resolves to that staff member's email.
     const { data: staffEmail } = await supabase.rpc('staff_login_email', { p_phone: id })
-    email = typeof staffEmail === 'string' && staffEmail ? staffEmail : phoneEmail(id)
+    if (typeof staffEmail !== 'string' || !staffEmail) return { error: 'auth.wrong' }
+    email = staffEmail
   }
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) return { error: error.status === 400 ? 'auth.wrong' : 'auth.network' }
@@ -266,20 +276,6 @@ export async function signIn(id: string, password: string): Promise<Who | { erro
   if (who) return who
   await supabase.auth.signOut()
   return { error: 'auth.inactive' }
-}
-
-export async function signUpCustomer(name: string, phone: string, password: string): Promise<Who | { error: Key }> {
-  const { data: taken, error: checkError } = await supabase.rpc('phone_has_account', { p_phone: phone })
-  if (checkError) return { error: 'auth.network' }
-  if (taken) return { error: 'auth.phoneTaken' }
-  const { error } = await supabase.auth.signUp({ email: phoneEmail(phone), password })
-  if (error) return { error: /registered|exists/i.test(error.message) ? 'auth.phoneTaken' : error.status === 422 ? 'auth.passwordShort' : 'auth.network' }
-  const { error: claimError } = await supabase.rpc('claim_customer', { p_name: name, p_phone: phone })
-  if (claimError) {
-    await supabase.auth.signOut()
-    return { error: claimError.message.includes('phone_taken') ? 'auth.phoneTaken' : 'auth.network' }
-  }
-  return (await resolveSession()) ?? { error: 'auth.network' }
 }
 
 export const signOut = () => supabase.auth.signOut()

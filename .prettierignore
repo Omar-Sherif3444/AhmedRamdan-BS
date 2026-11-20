@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+brag-output
+public
+supabase
+.factory
+.vercel
+package-lock.json
