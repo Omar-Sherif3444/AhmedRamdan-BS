@@ -1,0 +1,7 @@
+# Never upload local secrets or backend sources to Vercel; the build only needs src/, public files and config.
+.env.supabase
+.env*.local
+supabase/
+node_modules/
+dist/
+brag-output*/

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg: #0c0a09; --surface: #1c1917; --surface-2: #292524; --text: #fafaf9; --text-2: #a8a29e; --gold: #e0b443; --brass: #c9a14a; --busy: #f87171; --ok: #4ade80; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans Arabic', sans-serif; -webkit-font-smoothing: antialiased; }
+  .layer { position: absolute; inset: 0; opacity: 0; }
+  .full { position: absolute; inset: 0; width: 1920px; height: 1080px; object-fit: cover; }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgb(12 10 9 / .85) 100%); }
+  .shade-b { position: absolute; inset: 0; background: linear-gradient(to top, rgb(12 10 9 / .96) 0%, rgb(12 10 9 / .75) 26%, transparent 52%); }
+  h1 { font-weight: 600; font-size: 92px; line-height: 1.08; letter-spacing: -0.02em; }
+  .ar { font-size: 52px; font-weight: 500; color: var(--gold); direction: rtl; }
+  .cap { position: absolute; left: 110px; bottom: 96px; font-size: 68px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.1; }
+  .cap em { font-style: normal; color: var(--gold); }
+  .anim { display: block; will-change: transform, opacity; }
+  #hook .wrap { position: absolute; left: 0; right: 0; top: 330px; text-align: center; }
+  #hook .wrap .ar { margin-top: 26px; }
+  .lockup { position: absolute; left: 0; right: 0; text-align: center; }
+  .badge { width: 132px; height: 132px; margin: 0 auto 34px; border-radius: 34px; display: grid; place-items: center; background: rgb(224 180 67 / .12); border: 2px solid rgb(224 180 67 / .55); box-shadow: 0 0 80px rgb(224 180 67 / .18); }
+  .name { font-size: 96px; font-weight: 700; letter-spacing: -0.02em; }
+  .tag { margin-top: 18px; font-size: 48px; font-weight: 500; color: var(--text-2); }
+  .tag b { color: var(--gold); font-weight: 600; }
+  /* Scene 3 */
+  .win { position: absolute; left: 90px; top: 262px; width: 1190px; border-radius: 18px; overflow: hidden; background: var(--surface); border: 1px solid #3a3430; box-shadow: 0 40px 120px rgb(0 0 0 / .6); }
+  .win .bar { height: 40px; display: flex; align-items: center; gap: 9px; padding: 0 16px; background: var(--surface-2); }
+  .win .bar i { width: 12px; height: 12px; border-radius: 50%; background: #57534e; }
+  .win .bar span { margin-inline-start: 18px; font-size: 16px; color: var(--text-2); }
+  .win .shot { position: relative; width: 1190px; height: 670px; overflow: hidden; }
+  #shotZ { position: absolute; left: 0; top: 0; width: 1190px; height: 670px; transform-origin: 0 0; }
+  #shotZ img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .phone { position: absolute; left: 1420px; top: 230px; width: 358px; height: 742px; border-radius: 56px; padding: 14px; background: #050404; border: 2px solid #3a3430; box-shadow: 0 40px 120px rgb(0 0 0 / .6), inset 0 0 0 2px #1c1917; }
+  .phone .scr { position: relative; width: 330px; height: 714px; border-radius: 42px; overflow: hidden; background: var(--bg); }
+  .phone .scr img { position: absolute; left: 0; top: 0; width: 330px; }
+  .ring { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 3px solid var(--busy); }
+  .cursor { position: absolute; left: 0; top: 0; width: 44px; height: 44px; filter: drop-shadow(0 4px 10px rgb(0 0 0 / .6)); }
+  .tap { position: absolute; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; background: rgb(224 180 67 / .35); border: 2px solid var(--gold); }
+  #s3 .cap { top: 92px; bottom: auto; left: 90px; }
+  .live { position: absolute; left: 1420px; top: 168px; width: 358px; text-align: center; font-size: 26px; font-weight: 600; color: var(--text-2); }
+  .live i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--busy); margin-inline-end: 10px; vertical-align: 2px; }
+  .zoom { position: absolute; inset: 0; overflow: hidden; }
+  .zoom img { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+  .wipe { position: absolute; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: var(--gold); box-shadow: 0 0 40px var(--gold); }
+  .url { margin-top: 30px; font-size: 40px; font-weight: 500; color: var(--gold); letter-spacing: .01em; }
+  .credit { margin-top: 56px; font-size: 26px; color: var(--text-2); }
+  #dip { position: absolute; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+  <!-- 1–2 & 6: the real 3D shop floor -->
+  <div id="orbitL" class="layer"><img id="orbit" class="full" alt="" /><div class="vignette"></div><div id="orbitDim" style="position:absolute;inset:0;background:var(--bg);opacity:0"></div></div>
+
+  <div id="hook" class="layer">
+    <div class="wrap">
+      <h1 class="anim" id="h1">Is there a free chair <span style="color:var(--gold)">right now?</span></h1>
+      <div class="ar anim" id="h1ar">فيه كرسي فاضي دلوقتي؟</div>
+    </div>
+  </div>
+
+  <div id="reveal" class="layer">
+    <div class="lockup" style="top:300px">
+      <div class="badge anim" id="rvBadge"><svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#e0b443" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg></div>
+      <div class="name anim" id="rvName">Ahmed Ramdan Barber Shop</div>
+      <div class="tag anim" id="rvTag">Every seat. <b>Live.</b> For everyone.</div>
+    </div>
+  </div>
+
+  <!-- 3: barber taps, phones update -->
+  <div id="s3" class="layer">
+    <div class="cap"><span class="anim" id="c3a">The barber <em>taps a chair.</em></span></div>
+    <div class="cap"><span class="anim" id="c3b">Every customer's phone <em>sees it.</em></span></div>
+    <div class="win" id="win">
+      <div class="bar"><i></i><i></i><i></i><span>Shop Floor · staff</span></div>
+      <div class="shot"><div id="shotZ"><img id="ck0" src="../shots/checkin-0.png" /><img id="ck2" src="../shots/checkin-2.png" /><img id="ck3" src="../shots/checkin-3.png" /></div></div>
+    </div>
+    <div class="live" id="live"><i></i>Customer view</div>
+    <div class="phone" id="phone"><div class="scr"><img id="pb" src="../shots/phone-before.png" /><img id="pa" src="../shots/phone-after.png" /><div class="ring" id="ring"></div></div></div>
+    <div class="tap" id="tap"></div>
+    <svg class="cursor" id="cursor" viewBox="0 0 24 24"><path d="M4 2.5 20 11l-7 1.8L9.6 20z" fill="#fafaf9" stroke="#0c0a09" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </div>
+
+  <!-- 4: the owner's view -->
+  <div id="s4a" class="layer"><div class="zoom"><img id="z4a" src="../shots/dash-en.png" /></div><div class="shade-b"></div>
+    <div class="cap"><span class="anim" id="c4a">The owner <em>sees the money.</em></span></div></div>
+  <div id="s4b" class="layer"><div class="zoom"><img id="z4b" src="../shots/reports-ar.png" /></div><div class="shade-b"></div>
+    <div class="cap"><span class="anim" id="c4b">Revenue, visits, <em>every barber's share.</em></span></div></div>
+
+  <!-- 5: bilingual -->
+  <div id="s5" class="layer"><div class="zoom"><img id="z5a" src="../shots/public-ar.png" /></div><div class="zoom" id="z5bw"><img id="z5b" src="../shots/public-en.png" /></div><div class="wipe" id="wipe"></div><div class="shade-b"></div>
+    <div class="cap"><span class="anim" id="c5">Arabic first. <em>English too.</em></span></div></div>
+
+  <!-- 6: outro -->
+  <div id="outro" class="layer">
+    <div class="lockup" style="top:250px">
+      <div class="badge anim" id="oBadge"><svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#e0b443" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/></svg></div>
+      <div class="name anim" id="oName">Ahmed Ramdan Barber Shop</div>
+      <div class="url anim" id="oUrl">ahmed-ramdan-barbershop.vercel.app</div>
+      <div class="credit anim" id="oCredit">Designed &amp; developed by Omar Sherif</div>
+    </div>
+  </div>
+  <div id="dip"></div>
+
+<script>
+const $ = (id) => document.getElementById(id)
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+const lerp = (a, b, k) => a + (b - a) * k
+const oCubic = (k) => 1 - (1 - clamp(k)) ** 3
+const ioCubic = (k) => { k = clamp(k); return k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2 }
+const ramp = (t, a, d) => oCubic((t - a) / d)
+// Visible from a to b with fade in/out.
+const win = (t, a, b, fi = 0.25, fo = 0.25) => Math.min(clamp((t - a) / fi), clamp((b - t) / fo))
+// Text: rises 26px and fades in over 0.4s from a; fades out before b.
+function rise(el, t, a, b, d = 26) {
+  const k = ramp(t, a, 0.45), out = clamp((b - t) / 0.25)
+  el.style.opacity = Math.min(k, out)
+  el.style.transform = `translateY(${(1 - k) * d}px)`
+}
+function show(id, o) { $(id).style.opacity = o }
+const SC = 0.62, WX = 90, WY = 302 // staff window: screenshot scale and origin
+
+const frames = []
+for (let i = 0; i <= 240; i++) frames.push(`../orbitj/f${String(i).padStart(3, '0')}.jpg`)
+async function setOrbit(i) {
+  const img = $('orbit'), src = frames[clamp(Math.round(i), 0, 240)]
+  if (img.getAttribute('src') !== src) { img.setAttribute('src', src); await img.decode() }
+}
+
+window.render = async (t) => {
+  // Layers on/off (cuts on beats: 6, 11, 13, 15, 17).
+  const orbitOn = t < 6 || t >= 17
+  show('orbitL', orbitOn ? 1 : 0)
+  if (t < 6) await setOrbit(t * 200 / 6)
+  else if (t >= 17) await setOrbit(240 - (20 - t) * 12)
+  $('orbit').style.transform = `scale(${t < 6 ? lerp(1.08, 1.0, ioCubic(t / 6)) : lerp(1.04, 1.1, (t - 17) / 3)})`
+  $('orbitDim').style.opacity = t < 6 ? lerp(0.38, 0.5, clamp((t - 2.9) / 0.6)) : 0.62
+  $('orbit').style.filter = t >= 17 ? `blur(${lerp(0, 9, ramp(t, 17, 0.6))}px)` : 'none'
+
+  // 1. Hook
+  show('hook', t < 3.2 ? 1 : 0)
+  rise($('h1'), t, 0.1, 2.85); rise($('h1ar'), t, 0.3, 2.85)
+
+  // 2. Reveal
+  show('reveal', t >= 3 && t < 6 ? 1 : 0)
+  rise($('rvBadge'), t, 3.0, 5.85, 40); rise($('rvName'), t, 3.15, 5.85); rise($('rvTag'), t, 3.7, 5.85)
+
+  // 3. Tap → phones update
+  const s3 = t >= 6 && t < 11
+  show('s3', s3 ? 1 : 0)
+  if (s3) {
+    rise($('c3a'), t, 6.25, 8.95); rise($('c3b'), t, 9.0, 10.85)
+    const wk = ramp(t, 6.0, 0.6)
+    $('win').style.transform = `translateY(${(1 - wk) * 60}px) scale(${lerp(0.97, 1, wk)})`; $('win').style.opacity = wk
+    const pk = ramp(t, 6.2, 0.6)
+    $('phone').style.transform = `translateY(${(1 - pk) * 60}px)`; $('phone').style.opacity = pk; $('live').style.opacity = pk
+    show('ck0', 1); show('ck2', clamp((t - 7.03) / 0.12)); show('ck3', clamp((t - 8.53) / 0.12))
+    show('pa', clamp((t - 9.0) / 0.1))
+    // Camera on the staff screen: chairs → dialog → chairs (source pixels at the window centre).
+    const cams = [[6.0, 1.55, 740, 732], [6.95, 1.55, 740, 732], [7.3, 1.5, 960, 545], [8.55, 1.5, 960, 545], [8.95, 1.55, 640, 732]]
+    let cam = cams[cams.length - 1]
+    for (let i = 0; i < cams.length - 1; i++) if (t >= cams[i][0] && t < cams[i + 1][0]) {
+      const k = ioCubic((t - cams[i][0]) / (cams[i + 1][0] - cams[i][0])); cam = [0, ...[1, 2, 3].map((j) => lerp(cams[i][j], cams[i + 1][j], k))]
+    }
+    const [, z, cx, cy] = cam
+    $('shotZ').style.transform = `translate(${595 - cx * SC * z}px, ${335 - cy * SC * z}px) scale(${z})`
+    // Cursor path: enters → Chair 3 card (tap at 7.0) → Start service (tap at 8.5) → rests.
+    // Cursor lives in screen space, pinned to each camera keyframe it acts in.
+    const at = (cam) => (x, y) => [WX + 595 + (x - cam[2]) * SC * cam[1], WY + 335 + (y - cam[3]) * SC * cam[1]]
+    const A = at(cams[1]), Bc = at(cams[3]), C = at(cams[4])
+    const p0 = A(1150, 1060), p1 = A(665, 975), p2 = Bc(1171, 812), p3 = C(1000, 1000)
+    const mix = (a, b, k) => [lerp(a[0], b[0], k), lerp(a[1], b[1], k)]
+    let c
+    if (t < 6.9) c = mix(p0, p1, ioCubic((t - 6.2) / 0.7))
+    else if (t < 7.0) c = p1
+    else if (t < 8.3) c = mix(p1, p2, ioCubic((t - 7.25) / 1.0))
+    else if (t < 8.8) c = p2
+    else c = mix(p2, p3, ioCubic((t - 8.8) / 0.6))
+    const press = (Math.abs(t - 7.0) < 0.08 || Math.abs(t - 8.5) < 0.08) ? 0.86 : 1
+    $('cursor').style.transform = `translate(${c[0] - 8}px, ${c[1] - 4}px) scale(${press})`
+    $('cursor').style.opacity = clamp((t - 6.2) / 0.2)
+    const tapAt = t >= 8.5 ? 8.5 : 7.0, tk = (t - tapAt) / 0.45, tp = t >= 8.5 ? p2 : p1
+    $('tap').style.left = tp[0] + 'px'; $('tap').style.top = tp[1] + 'px'
+    $('tap').style.opacity = tk >= 0 && tk <= 1 ? 1 - tk : 0
+    $('tap').style.transform = `scale(${0.4 + tk * 1.2})`
+    // Pulse ring on the phone's Chair 3 label.
+    const rk = (t - 9.0) / 0.9
+    const ring = $('ring'); ring.style.left = (322 * 0.423) + 'px'; ring.style.top = (550 * 0.423) + 'px'
+    ring.style.opacity = rk >= 0 && rk <= 1.6 ? clamp(1 - (rk % 0.8) / 0.8) : 0
+    ring.style.transform = `scale(${0.5 + (rk % 0.8) * 1.6})`
+  }
+
+  // 4. Owner
+  show('s4a', t >= 11 && t < 13 ? 1 : 0)
+  if (t >= 11 && t < 13) { const k = (t - 11) / 2; $('z4a').style.transformOrigin = '1080px 40px'; $('z4a').style.transform = `scale(${lerp(1.16, 1.26, k)})`; rise($('c4a'), t, 11.15, 12.95) }
+  show('s4b', t >= 13 && t < 15 ? 1 : 0)
+  if (t >= 13 && t < 15) { const k = (t - 13) / 2; $('z4b').style.transformOrigin = '300px 420px'; $('z4b').style.transform = `scale(${lerp(1.2, 1.28, k)}) translateY(${lerp(0, -30, k)}px)`; rise($('c4b'), t, 13.15, 14.95) }
+
+  // 5. Bilingual: gold wipe at 16.0 reveals English.
+  show('s5', t >= 15 && t < 17 ? 1 : 0)
+  if (t >= 15 && t < 17) {
+    const z = `scale(${lerp(1.03, 1.08, (t - 15) / 2)})`
+    $('z5a').style.transform = z; $('z5b').style.transform = z; $('z5a').style.transformOrigin = $('z5b').style.transformOrigin = '960px 380px'
+    const wx = lerp(1920, 0, ioCubic((t - 15.85) / 0.4))
+    $('z5bw').style.clipPath = `inset(0 0 0 ${wx}px)`
+    $('wipe').style.left = wx + 'px'; $('wipe').style.opacity = t > 15.8 && t < 16.3 ? 1 : 0
+    rise($('c5'), t, 15.15, 16.95)
+  }
+
+  // 6. Outro
+  show('outro', t >= 17 ? 1 : 0)
+  rise($('oBadge'), t, 17.05, 99, 40); rise($('oName'), t, 17.2, 99); rise($('oUrl'), t, 17.65, 99); rise($('oCredit'), t, 18.0, 99)
+
+  // Dips through the background on the hard cuts.
+  const dips = [6, 11, 13, 17]
+  let d = 0
+  for (const c of dips) d = Math.max(d, 1 - Math.abs(t - c) / 0.1)
+  d = Math.max(d, clamp((t - 19.7) / 0.3)) // fade out on the last beat
+  $('dip').style.opacity = clamp(d)
+}
+window.ready = Promise.all([document.fonts.ready, ...[...document.images].filter((i) => i.src).map((i) => i.decode())]).then(() => setOrbit(0)).then(() => 1)
+</script>
+</body>
+</html>
