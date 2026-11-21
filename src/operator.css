@@ -13,8 +13,9 @@
   --op-ink: #111827; /* 17:1 on white */
   --op-ink-2: #4b5563; /* 7.6:1 on white */
   --op-sel: #111827; /* selected chip: the strongest contrast on the screen */
-  --op-accent: #c0172a; /* the one red: Start */
-  --op-accent-2: #c0172a;
+  --op-accent: #111827; /* Start, focus: the same near-black as a selected chip */
+  --op-accent-2: #111827;
+  --op-danger: #b91c1c; /* errors only: a bad phone number, no free chair */
   --op-on-accent: #fff;
   --op-ok: #15803d;
   --op-shadow: 0 1px 2px rgb(17 24 39 / 6%), 0 4px 14px rgb(17 24 39 / 6%);
@@ -129,7 +130,7 @@
   font-variant-numeric: tabular-nums;
 }
 .op-seat-off {
-  color: var(--op-accent-2);
+  color: var(--op-danger);
   font-size: 14px;
 }
 /* Name and phone side by side on a tablet, stacked on a phone. */
@@ -139,7 +140,7 @@
   gap: var(--op-gap);
 }
 .op .op-input[aria-invalid='true'] {
-  border-color: var(--op-accent-2);
+  border-color: var(--op-danger);
 }
 .op-name {
   display: flex;
@@ -165,7 +166,7 @@
   border-color: var(--op-accent-2);
   outline: 2px solid var(--op-accent-2);
   outline-offset: 0;
-  box-shadow: 0 0 0 5px rgb(192 23 42 / 18%);
+  box-shadow: 0 0 0 5px rgb(17 24 39 / 15%);
 }
 .op .op-input:hover {
   border-color: var(--op-ink-2);
@@ -564,9 +565,9 @@
   touch-action: manipulation;
 }
 .op-fab:hover {
-  background: #c0172a;
+  background: #374151;
 }
 .op-fab:focus-visible {
-  outline: 3px solid #c0172a;
+  outline: 3px solid #111827;
   outline-offset: 3px;
 }
