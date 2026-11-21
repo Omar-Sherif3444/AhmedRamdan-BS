@@ -363,6 +363,9 @@ function LiveCard({
           {barber && ` · ${barber}`}
         </span>
       </div>
+      <span className="op-tag">
+        {visit.method === 'wallet' ? <Wallet size={13} aria-hidden /> : <Banknote size={13} aria-hidden />} {t(`pm.${visit.method}`)}
+      </span>
       <span className="op-card-min">
         <Clock size={14} aria-hidden /> {i18n.minutes(minutes)}
       </span>

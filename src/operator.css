@@ -172,9 +172,10 @@
   flex-direction: column;
   gap: 6px;
 }
+/* An even grid: every chip the same width, no lone chip on a ragged last row. */
 .op-chips {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   gap: 10px;
 }
 .op-chip {
@@ -184,14 +185,23 @@
   justify-content: center;
   gap: 2px;
   min-block-size: var(--op-chip);
-  min-inline-size: 104px;
-  padding-inline: 18px;
+  min-inline-size: 0;
+  padding-inline: 12px;
   background: var(--op-surface-2);
   border: 1px solid var(--op-line);
   border-radius: var(--op-r);
-  transition: background 120ms linear;
+  text-align: center;
+  transition:
+    background 120ms linear,
+    border-color 120ms linear;
+}
+.op-chip:hover:not([aria-pressed='true']) {
+  border-color: var(--op-ink-2);
 }
 .op-chip-t {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 17px;
   font-weight: 600;
   line-height: 1.3;
@@ -205,6 +215,7 @@
   background: var(--op-accent);
   border-color: var(--op-accent-2);
   color: var(--op-on-accent);
+  box-shadow: 0 4px 12px rgb(192 23 42 / 25%);
 }
 .op-chip[aria-pressed='true'] .op-chip-s {
   color: #fee2e2;
@@ -251,6 +262,17 @@
   color: var(--op-ink-2);
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+.op-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline: 8px;
+  border-radius: 999px;
+  background: var(--op-surface-3);
+  font-size: 13px;
+  color: var(--op-ink-2);
+  white-space: nowrap;
 }
 .op-card-min {
   display: inline-flex;
@@ -350,6 +372,12 @@
   font-size: 20px;
   font-weight: 600;
 }
+.op .op-start:disabled {
+  opacity: 1;
+  background: var(--op-surface-3);
+  border-color: var(--op-line);
+  color: var(--op-ink-2);
+}
 .op-start-sum {
   font-size: 16px;
   font-variant-numeric: tabular-nums;
@@ -378,6 +406,7 @@
   inline-size: 100%;
   block-size: 100%;
   color: #a8a29e;
+  opacity: 0.45;
 }
 .op-big {
   display: inline-flex;
@@ -401,6 +430,10 @@
   flex-direction: column;
   align-items: center;
   min-inline-size: 4ch;
+  padding-block: 4px;
+  padding-inline: 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--op-bg) 85%, transparent);
 }
 .op-wait-n {
   font-size: clamp(48px, 15vw, 76px);
@@ -485,9 +518,6 @@
   .op-snack-wrap {
     inset-block-start: auto;
     inset-block-end: 16px;
-  }
-  .op-chip {
-    min-inline-size: 124px;
   }
   .op-big {
     --op-big: 92px;
