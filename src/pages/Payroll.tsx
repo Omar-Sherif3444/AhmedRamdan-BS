@@ -99,7 +99,7 @@ function OwnerPayroll({ rows, month }: { rows: PayrollRow[]; month: string }) {
 
   return (
     <>
-      <div className="kpis three">
+      <div className="kpis cols-3">
         <Kpi icon={Banknote} label={t('py.totalGross')} value={i18n.money(totals.gross)} />
         <Kpi icon={Wallet} label={t('py.totalNet')} value={i18n.money(totals.net)} />
         <Kpi icon={CircleCheck} label={t('py.totalPaid')} value={i18n.money(totals.paid)} />
@@ -337,7 +337,7 @@ function MyPayroll({ row, month }: { row?: PayrollRow; month: string }) {
           </dl>
         </Card>
       )}
-      <div className="kpis three">
+      <div className="kpis cols-3">
         <Kpi icon={TrendingUp} label={t('py.myRevenue')} value={mine ? i18n.money(mine.total) : '…'} sub={i18n.month(month)} />
         <Kpi icon={Receipt} label={t('py.myVisits')} value={mine ? i18n.num(mine.visits) : '…'} />
         <Kpi icon={CalendarX} label={t('py.myAbsences')} value={i18n.num(absences.length)} />

@@ -71,7 +71,7 @@ export default function Expenses() {
         </select>
       </div>
 
-      <div className="kpis three">
+      <div className="kpis cols-3">
         <Kpi icon={Store} label={t('ex.shopTotal')} value={i18n.money(totals.shop)} />
         <Kpi icon={User} label={t('ex.personalTotal')} value={i18n.money(totals.personal)} />
         <Kpi icon={Wallet} label={t('ex.count')} value={i18n.num(rows.length)} />

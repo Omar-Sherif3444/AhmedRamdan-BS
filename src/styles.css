@@ -1850,7 +1850,8 @@ textarea:hover {
 textarea[aria-invalid='true'] {
   border-color: var(--danger);
 }
-.kpis.three {
+/* Not `.three`: that class is the 3D canvas box (height: 100%), which made these cards overflow. */
+.kpis.cols-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .wrap-text {
@@ -1898,7 +1899,7 @@ textarea[aria-invalid='true'] {
   flex-wrap: nowrap;
 }
 @media (max-width: 760px) {
-  .kpis.three {
+  .kpis.cols-3 {
     grid-template-columns: 1fr;
   }
   .wrap-text {

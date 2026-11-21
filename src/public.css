@@ -198,3 +198,128 @@
     animation: none;
   }
 }
+
+/* Shop info footer under the wait board. Same light palette and contrast floor as the board. */
+.sf {
+  --sf-bg: #f3f2ee;
+  --sf-ink: #0b0b0a;
+  --sf-ink-2: #44423d;
+  --sf-line: #d6d3cc;
+  --sf-accent: #991b1b;
+
+  box-sizing: border-box;
+  background: var(--sf-bg);
+  color: var(--sf-ink);
+  border-block-start: 1px solid var(--sf-line);
+  font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  letter-spacing: 0;
+}
+.sf *,
+.sf *::before,
+.sf *::after {
+  box-sizing: border-box;
+}
+.sf p {
+  margin: 0;
+}
+.sf-inner {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1.4fr;
+  gap: 24px;
+  align-items: start;
+  max-inline-size: 1200px;
+  margin-inline: auto;
+  padding: 32px 24px 16px;
+}
+.sf-col {
+  display: grid;
+  gap: 6px;
+}
+.sf-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sf-brand img {
+  border-radius: 10px;
+  object-fit: cover;
+}
+.sf-tagline {
+  max-inline-size: 32ch;
+  color: var(--sf-ink-2);
+}
+.sf-title {
+  font-weight: 600;
+  margin-block-end: 2px;
+}
+.sf-col > .sf-title:not(:first-child) {
+  margin-block-start: 12px;
+}
+.sf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 40px;
+  justify-self: start;
+  color: var(--sf-ink-2);
+  text-decoration: none;
+}
+.sf-link:hover,
+.sf-credit:hover {
+  color: var(--sf-accent);
+}
+.sf-socials {
+  display: flex;
+  gap: 8px;
+}
+.sf-social {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border: 1px solid var(--sf-line);
+  border-radius: 10px;
+  color: var(--sf-ink-2);
+}
+.sf-social:hover {
+  color: var(--sf-accent);
+  border-color: var(--sf-accent);
+}
+.sf-map iframe {
+  inline-size: 100%;
+  block-size: 180px;
+  border: 1px solid var(--sf-line);
+  border-radius: 10px;
+}
+.sf a:focus-visible {
+  outline: 2px solid var(--sf-accent);
+  outline-offset: 2px;
+}
+.sf-copy {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  max-inline-size: 1200px;
+  margin-inline: auto;
+  padding: 12px 24px 24px;
+  border-block-start: 1px solid var(--sf-line);
+  color: var(--sf-ink-2);
+  font-size: 13px;
+}
+.sf-credit {
+  font-weight: 600;
+  color: var(--sf-ink);
+  text-decoration: none;
+}
+@media (width <= 760px) {
+  .sf-inner {
+    grid-template-columns: 1fr;
+    padding: 24px 16px 8px;
+  }
+  .sf-copy {
+    padding: 8px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+}

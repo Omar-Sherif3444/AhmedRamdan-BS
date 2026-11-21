@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import ShopFooter from '../components/ShopFooter'
 import '../public.css'
 
 /**
@@ -233,6 +234,7 @@ export default function Public() {
   const frame = `${shown}|${band ? `${band.low}-${band.high}` : '0'}|${tone}|${unknown ? (tried ? 'down' : 'wait') : 'ok'}`
 
   return (
+    <>
     <main className={`pw pw-${tone}${stale && !unknown ? ' pw-is-stale' : ''}`} dir="rtl">
       <section className="pw-card">
         <p className="pw-eyebrow">{L.eyebrow}</p>
@@ -291,6 +293,8 @@ export default function Public() {
         {stale && !unknown && <p className="pw-warn">{L.stale}</p>}
       </section>
     </main>
+    <ShopFooter />
+    </>
   )
 }
 

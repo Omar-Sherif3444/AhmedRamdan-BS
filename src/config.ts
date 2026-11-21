@@ -1,5 +1,6 @@
 // Salon contact details shown in the customer footer (from the salon's Safe Code profile).
 export const SALON = {
+  name: 'Ahmed Ramdan Barber Shop',
   phone: '010 9492 8882',
   /** International format, digits only, for tel: and wa.me links. */
   phoneIntl: '+201094928882',

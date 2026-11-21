@@ -57,7 +57,7 @@ export default function Dashboard() {
       <MethodTotals />
 
       <Card title={t('d.floor3d')} sub={t('d.floor3dHint')}>
-        <Floor3D onSelect={() => (location.hash = '#/floor')} />
+        <Floor3D onSelect={() => (location.hash = '#/op')} />
       </Card>
 
       <div className="toolbar">
@@ -138,7 +138,7 @@ function MethodTotals() {
         </div>
       }
     >
-      <div className="kpis three">
+      <div className="kpis cols-3">
         <Kpi icon={Banknote} label={t('d.cash')} value={show(totals?.cash)} />
         <Kpi icon={Wallet} label={t('d.wallet')} value={show(totals?.wallet)} />
         <Kpi icon={TrendingUp} label={t('d.total')} value={show(totals?.total)} sub={totals?.other ? t('d.other', { amount: i18n.money(totals.other) }) : undefined} />

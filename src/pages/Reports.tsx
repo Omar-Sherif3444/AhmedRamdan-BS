@@ -51,7 +51,7 @@ export default function Reports() {
         <Kpi icon={Users} label={t('rp.customers')} value={i18n.num(s.customers)} />
         <Kpi icon={Ban} label={t('rp.cancelled')} value={i18n.num(s.cancelled)} />
       </div>
-      <div className="kpis three">
+      <div className="kpis cols-3">
         <Kpi icon={Banknote} label={t('rp.revenue')} value={i18n.money(s.revenue)} />
         <Kpi icon={Store} label={t('rp.shopExpenses')} value={i18n.money(shopExpenses)} />
         <Kpi icon={TrendingUp} label={t('rp.net')} value={i18n.money(s.revenue - shopExpenses)} />
