@@ -24,7 +24,7 @@ const ROUTES = [
   { id: 'customers', icon: Users, Page: Customers, owner: false },
   { id: 'transactions', icon: Receipt, Page: Transactions, owner: false },
   { id: 'expenses', icon: Wallet, Page: Expenses, owner: false },
-  { id: 'payroll', icon: HandCoins, Page: Payroll, owner: false },
+  { id: 'payroll', icon: HandCoins, Page: Payroll, owner: true },
   { id: 'dashboard', icon: LayoutDashboard, Page: Dashboard, owner: true },
   { id: 'reports', icon: ChartColumn, Page: Reports, owner: true },
   { id: 'employees', icon: UserCog, Page: Employees, owner: true },
