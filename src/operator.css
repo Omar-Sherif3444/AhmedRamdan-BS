@@ -130,7 +130,8 @@
   flex-direction: column;
   gap: 4px;
 }
-.op-input {
+/* `.op` prefix: the admin stylesheet styles every `input` (white, 44px) with higher specificity than one class. */
+.op .op-input {
   min-block-size: 56px;
   inline-size: 100%;
   padding-inline: 14px;
@@ -149,6 +150,9 @@
   outline: 2px solid var(--op-accent-2);
   outline-offset: 0;
   box-shadow: 0 0 0 5px rgb(224 32 58 / 25%);
+}
+.op .op-input:hover {
+  border-color: var(--op-ink-2);
 }
 .op-input::placeholder {
   color: #78716c;
@@ -264,7 +268,7 @@
   gap: 8px;
   margin-inline-start: auto;
 }
-.op-pay-in {
+.op .op-pay-in {
   inline-size: 7rem;
   min-block-size: 48px;
 }
