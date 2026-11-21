@@ -326,7 +326,7 @@
   border: 1px solid var(--op-line);
   border-radius: 12px;
 }
-.op-done {
+.op .op-done {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -370,7 +370,8 @@
   border-radius: 16px;
   box-shadow: var(--op-shadow);
 }
-.op-start {
+/* `.op` prefix: `.op button { color: inherit }` (0,1,1) would otherwise win and paint dark text on these fills. */
+.op .op-start {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -479,7 +480,7 @@
   font-size: 16px;
   color: #fafaf9;
 }
-.op-undo {
+.op .op-undo {
   display: inline-flex;
   align-items: center;
   gap: 8px;
