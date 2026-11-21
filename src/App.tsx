@@ -102,7 +102,7 @@ function OperatorApp() {
         <ReceiptText size={20} aria-hidden /> {t('ex.add')}
       </button>
       <Modal open={expense} onClose={() => setExpense(false)} title={t('ex.add')}>
-        {expense && <ExpenseForm isOwner={false} shopOnly onDone={() => setExpense(false)} />}
+        {expense && <ExpenseForm isOwner={false} counter onDone={() => setExpense(false)} />}
       </Modal>
     </div>
   )

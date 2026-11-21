@@ -138,19 +138,27 @@ export default function Expenses() {
   )
 }
 
-/** `shopOnly`: the shared shop account is not a person, so it can only record shop expenses. */
-export function ExpenseForm({ expense, isOwner, shopOnly, onDone }: { expense?: Expense; isOwner: boolean; shopOnly?: boolean; onDone: () => void }) {
+/**
+ * `counter`: the shared shop account. It is not a person, so a personal expense it records must
+ * name who it is for (a worker or the owner); a shop expense stays under the account.
+ */
+export function ExpenseForm({ expense, isOwner, counter, onDone }: { expense?: Expense; isOwner: boolean; counter?: boolean; onDone: () => void }) {
   const { state, dispatch, toast, i18n } = useStore()
   const { t } = i18n
   const today = dayKey(new Date())
   const [f, setF] = useState({
     amount: expense ? String(expense.amount) : '',
-    kind: (expense?.kind ?? (shopOnly ? 'shop' : '')) as ExpenseKind | '',
+    kind: (expense?.kind ?? (counter ? 'shop' : '')) as ExpenseKind | '',
+    // Whose personal expense: the owner defaults to themself, the shop account must choose.
+    person: counter ? '' : state.currentUserId,
     description: expense?.description ?? '',
     day: expense ? dayKey(new Date(expense.spentAt)) : today,
   })
   const [errors, setErrors] = useState<Partial<Record<keyof typeof f, string>>>({})
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Personal expenses on a new entry name a real person: the owner, a barber or an employee.
+  const people = state.employees.filter((e) => e.active && e.role !== 'operator')
+  const pickPerson = !expense && f.kind === 'personal' && (counter || isOwner)
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -159,6 +167,7 @@ export function ExpenseForm({ expense, isOwner, shopOnly, onDone }: { expense?: 
     if (!f.amount.trim()) errs.amount = t('err.amount')
     else if (!(amount > 0)) errs.amount = t('err.amountInvalid')
     if (!f.kind) errs.kind = t('err.kind')
+    if (pickPerson && !f.person) errs.person = t('err.person')
     // Employees must explain the expense; for the owner the description is optional.
     if (!isOwner && !f.description.trim()) errs.description = t('err.description')
     if (isOwner && (!f.day || f.day > today)) errs.day = t('err.date')
@@ -169,7 +178,16 @@ export function ExpenseForm({ expense, isOwner, shopOnly, onDone }: { expense?: 
     const spentAt = sameDay ? (expense?.spentAt ?? undefined) : new Date(`${f.day}T12:00:00`).toISOString()
     const now = new Date().toISOString()
     if (expense) dispatch({ type: 'updateExpense', id: expense.id, amount, kind: f.kind, description: f.description, spentAt: spentAt ?? expense.spentAt })
-    else dispatch({ type: 'addExpense', amount, kind: f.kind, description: f.description, spentAt: isOwner ? spentAt : undefined, employeeId: state.currentUserId, now })
+    else
+      dispatch({
+        type: 'addExpense',
+        amount,
+        kind: f.kind,
+        description: f.description,
+        spentAt: isOwner ? spentAt : undefined,
+        employeeId: f.kind === 'personal' && f.person ? f.person : state.currentUserId,
+        now,
+      })
     toast(t(expense ? 'ex.updated' : 'ex.saved'))
     onDone()
   }
@@ -186,9 +204,6 @@ export function ExpenseForm({ expense, isOwner, shopOnly, onDone }: { expense?: 
         <Field label={t('ex.amount')} error={errors.amount}>
           <input inputMode="decimal" autoFocus value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value.replace(/[^\d.]/g, '') })} />
         </Field>
-        {shopOnly ? (
-          <p className="muted small">{t('ex.shop')}</p>
-        ) : (
         <Field label={t('ex.kind')} error={errors.kind}>
           <select value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value as ExpenseKind })}>
             <option value="">—</option>
@@ -199,8 +214,19 @@ export function ExpenseForm({ expense, isOwner, shopOnly, onDone }: { expense?: 
             ))}
           </select>
         </Field>
-        )}
       </div>
+      {pickPerson && (
+        <Field label={t('ex.for')} error={errors.person}>
+          <select value={f.person} onChange={(e) => setF({ ...f, person: e.target.value })}>
+            <option value="">—</option>
+            {people.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} · {t(`role.${p.role}`)}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
       <Field label={t('ex.description')} optional={isOwner} error={errors.description}>
         <textarea rows={3} placeholder={t('ex.descriptionPh')} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
       </Field>

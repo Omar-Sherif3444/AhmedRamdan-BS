@@ -217,7 +217,8 @@ export function run(a: Action, before: State): Promise<unknown> | null {
       })()
     }
     case 'addExpense':
-      return rpc('add_expense', { p_amount: a.amount, p_kind: a.kind, p_description: a.description, p_spent_at: a.spentAt ?? null })
+      // A personal expense is filed under the person it was for; a shop expense under whoever recorded it.
+      return rpc('add_expense', { p_amount: a.amount, p_kind: a.kind, p_description: a.description, p_spent_at: a.spentAt ?? null, p_employee: a.kind === 'personal' ? a.employeeId : null })
     case 'updateExpense':
       return rpc('update_expense', { p_id: a.id, p_amount: a.amount, p_kind: a.kind, p_description: a.description, p_spent_at: a.spentAt })
     case 'deleteExpense':
