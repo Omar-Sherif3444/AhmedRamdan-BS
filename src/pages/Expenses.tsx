@@ -138,13 +138,14 @@ export default function Expenses() {
   )
 }
 
-function ExpenseForm({ expense, isOwner, onDone }: { expense?: Expense; isOwner: boolean; onDone: () => void }) {
+/** `shopOnly`: the shared shop account is not a person, so it can only record shop expenses. */
+export function ExpenseForm({ expense, isOwner, shopOnly, onDone }: { expense?: Expense; isOwner: boolean; shopOnly?: boolean; onDone: () => void }) {
   const { state, dispatch, toast, i18n } = useStore()
   const { t } = i18n
   const today = dayKey(new Date())
   const [f, setF] = useState({
     amount: expense ? String(expense.amount) : '',
-    kind: (expense?.kind ?? '') as ExpenseKind | '',
+    kind: (expense?.kind ?? (shopOnly ? 'shop' : '')) as ExpenseKind | '',
     description: expense?.description ?? '',
     day: expense ? dayKey(new Date(expense.spentAt)) : today,
   })
@@ -185,6 +186,9 @@ function ExpenseForm({ expense, isOwner, onDone }: { expense?: Expense; isOwner:
         <Field label={t('ex.amount')} error={errors.amount}>
           <input inputMode="decimal" autoFocus value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value.replace(/[^\d.]/g, '') })} />
         </Field>
+        {shopOnly ? (
+          <p className="muted small">{t('ex.shop')}</p>
+        ) : (
         <Field label={t('ex.kind')} error={errors.kind}>
           <select value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value as ExpenseKind })}>
             <option value="">—</option>
@@ -195,6 +199,7 @@ function ExpenseForm({ expense, isOwner, onDone }: { expense?: Expense; isOwner:
             ))}
           </select>
         </Field>
+        )}
       </div>
       <Field label={t('ex.description')} optional={isOwner} error={errors.description}>
         <textarea rows={3} placeholder={t('ex.descriptionPh')} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />

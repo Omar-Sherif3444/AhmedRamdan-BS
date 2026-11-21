@@ -1,27 +1,28 @@
 /*
- * Operator (front desk). Dark, dense, built for a shop-floor tablet and a one-handed phone.
+ * Operator (front desk). Light, dense, built for a shop-floor tablet and a one-handed phone.
  * Logical properties only — no left/right/margin-left anywhere in this file (DESIGN.md, RTL).
  * Sizes follow the DESIGN.md table: chips 64 px, rows 64 px, waiting +/- 88 px with a 28 px gap.
  */
 .op {
-  --op-bg: #0b0b0c;
-  --op-surface: #15151a;
-  --op-surface-2: #1e1e25;
-  --op-surface-3: #27272f;
-  --op-line: #32323b;
-  --op-ink: #f5f5f4;
-  --op-ink-2: #a8a29e;
+  --op-bg: #fff;
+  --op-surface: #fafaf9;
+  --op-surface-2: #fff;
+  --op-surface-3: #f0eeeb;
+  --op-line: #d6d3d1;
+  --op-ink: #1c1917;
+  --op-ink-2: #57534e;
   --op-accent: #c0172a;
-  --op-accent-2: #e0203a;
-  --op-on-accent: #ffffff;
-  --op-ok: #22c55e;
+  --op-accent-2: #c0172a;
+  --op-on-accent: #fff;
+  --op-ok: #15803d;
   --op-gap: 12px;
   --op-chip: 64px;
   --op-row: 64px;
   --op-big: clamp(76px, 23vw, 96px);
   --op-r: 14px;
 
-  color-scheme: dark;
+  color-scheme: light;
+  border: 1px solid var(--op-line);
   display: flex;
   flex-direction: column;
   gap: var(--op-gap);
@@ -50,7 +51,7 @@
 }
 .op button:focus-visible,
 .op input:focus-visible {
-  outline: 3px solid #fafaf9;
+  outline: 3px solid var(--op-ink);
   outline-offset: 2px;
 }
 .op button:disabled {
@@ -158,7 +159,7 @@
   border-color: var(--op-accent-2);
   outline: 2px solid var(--op-accent-2);
   outline-offset: 0;
-  box-shadow: 0 0 0 5px rgb(224 32 58 / 25%);
+  box-shadow: 0 0 0 5px rgb(192 23 42 / 18%);
 }
 .op .op-input:hover {
   border-color: var(--op-ink-2);
@@ -299,8 +300,9 @@
   min-block-size: 56px;
   min-inline-size: 112px;
   padding-inline: 18px;
-  background: #166534;
-  border: 1px solid #22c55e;
+  background: #15803d;
+  border: 1px solid #15803d;
+  color: #fff;
   border-radius: 12px;
   font-size: 18px;
   font-weight: 600;
@@ -375,7 +377,7 @@
   z-index: -1;
   inline-size: 100%;
   block-size: 100%;
-  color: #4b4b55;
+  color: #a8a29e;
 }
 .op-big {
   display: inline-flex;
@@ -391,6 +393,7 @@
 .op-big:active:not(:disabled) {
   background: var(--op-accent);
   border-color: var(--op-accent-2);
+  color: var(--op-on-accent);
 }
 .op-wait {
   margin: 0;
@@ -431,12 +434,12 @@
   max-inline-size: 36rem;
   padding-block: 8px;
   padding-inline: 16px 10px;
-  background: #27272f;
-  border: 1px solid var(--op-line);
+  background: #1c1917;
+  border: 1px solid #1c1917;
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
   font-size: 16px;
-  color: var(--op-ink);
+  color: #fafaf9;
 }
 .op-undo {
   display: inline-flex;
@@ -498,4 +501,37 @@
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* Shop account: floating "add expense" button, bottom corner (inline-end: the left side in Arabic). */
+.op-main {
+  padding-block-end: 96px; /* the button never covers the last row */
+}
+.op-fab {
+  position: fixed;
+  inset-block-end: calc(20px + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: 20px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 56px;
+  padding-inline: 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #1c1917;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.op-fab:hover {
+  background: #c0172a;
+}
+.op-fab:focus-visible {
+  outline: 3px solid #c0172a;
+  outline-offset: 3px;
 }

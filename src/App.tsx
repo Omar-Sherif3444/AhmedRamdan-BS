@@ -1,13 +1,14 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { Armchair, Bell, CalendarX, ChartColumn, HandCoins, LayoutDashboard, Lock, LogOut, Menu, Receipt, Settings as SettingsIcon, UserCog, Users, Wallet, X } from 'lucide-react'
+import { Armchair, Bell, ReceiptText, CalendarX, ChartColumn, HandCoins, LayoutDashboard, Lock, LogOut, Menu, Receipt, Settings as SettingsIcon, UserCog, Users, Wallet, X } from 'lucide-react'
 import { useStore } from './store'
-import { initials } from './components/ui'
+import { Modal, initials } from './components/ui'
 import SignIn from './pages/SignIn'
 import { signOut } from './lib/api'
 import type { Key } from './i18n'
 // Lazy: three.js loads only when the owner opens the dashboard.
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 import Operator from './pages/Operator'
+import { ExpenseForm } from './pages/Expenses'
 import Customers from './pages/Customers'
 import Transactions from './pages/Transactions'
 import Employees from './pages/Employees'
@@ -72,10 +73,11 @@ export default function App() {
   return <AdminApp />
 }
 
-/** The front desk: one screen, no navigation, just a way out. */
+/** The shop account: the front-desk screen only (no sidebar), a way out, and a button to log a shop expense. */
 function OperatorApp() {
   const { i18n } = useStore()
   const { t } = i18n
+  const [expense, setExpense] = useState(false)
   return (
     <div className="public">
       <header className="topbar">
@@ -93,9 +95,15 @@ function OperatorApp() {
           </button>
         </div>
       </header>
-      <main id="main">
+      <main id="main" className="op-main">
         <Operator />
       </main>
+      <button type="button" className="op-fab" onClick={() => setExpense(true)}>
+        <ReceiptText size={20} aria-hidden /> {t('ex.add')}
+      </button>
+      <Modal open={expense} onClose={() => setExpense(false)} title={t('ex.add')}>
+        {expense && <ExpenseForm isOwner={false} shopOnly onDone={() => setExpense(false)} />}
+      </Modal>
     </div>
   )
 }
