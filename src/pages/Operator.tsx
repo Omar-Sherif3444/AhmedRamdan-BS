@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Clock, Minus, Plus, Scissors, Undo2, User, X } from 'lucide-react'
+import { Banknote, Check, Clock, Minus, Phone, Plus, Scissors, Undo2, User, Wallet, X } from 'lucide-react'
 import { useStore } from '../store'
-import type { Visit } from '../types'
+import { PAY_METHODS, type PaymentMethod, type Visit } from '../types'
 import '../operator.css'
 
 /** Mis-tap guard: a commit is ignored inside this window after the in-progress list reflows. */
@@ -60,6 +60,9 @@ export default function Operator() {
   )
 
   const [typed, setTyped] = useState('')
+  const [phone, setPhone] = useState('')
+  // Cash is the default, so the common case still costs no extra tap (DESIGN.md).
+  const [method, setMethod] = useState<PaymentMethod>('cash')
   const [picked, setPicked] = useState<string[]>([])
   const [who, setWho] = useState('')
   const [seatPick, setSeatPick] = useState('')
@@ -115,17 +118,22 @@ export default function Operator() {
 
   const nameOf = (v: Visit) => state.customers.find((c) => c.id === v.customerId)?.name.trim() || t('op.guest')
 
-  const ready = !!seat && picked.length > 0 && !!barberId
+  // Optional, but when typed it must look like a phone number: it is how a returning customer is matched.
+  const phoneDigits = phone.replace(/\D/g, '').length
+  const phoneOk = phoneDigits === 0 || (phoneDigits >= 7 && phoneDigits <= 15)
+  const ready = !!seat && picked.length > 0 && !!barberId && phoneOk
   const commit = () => {
     if (lock || !ready || !seat || !steady()) return
     const name = typed.trim() || autoName
     setLock(true)
     setTyped('')
+    setPhone('')
+    setMethod('cash')
     setPicked([])
     setWho('')
     setSeatPick('')
     const seatId = seat.id
-    dispatch({ type: 'register', seatId, name, serviceIds: picked, employeeId: barberId, method: 'cash', now: new Date().toISOString() })
+    dispatch({ type: 'register', seatId, name, phone: phone.trim(), serviceIds: picked, employeeId: barberId, method, now: new Date().toISOString() })
     // Undo of a start cancels that visit and frees the chair.
     flash(t('op.started', { name }), () => dispatch({ type: 'release', seatId, now: new Date().toISOString() }))
     buzz(12)
@@ -177,6 +185,7 @@ export default function Operator() {
           )}
         </div>
 
+        <div className="op-pair">
         <label className="op-name">
           <span className="op-k">
             {t('op.name')} <span className="op-muted">({t('op.optional')})</span>
@@ -192,6 +201,25 @@ export default function Operator() {
             onKeyDown={(e) => e.key === 'Enter' && commit()}
           />
         </label>
+        <label className="op-name">
+          <span className="op-k">
+            <Phone size={15} aria-hidden /> {t('op.phone')} <span className="op-muted">({t('op.optional')})</span>
+          </span>
+          <input
+            className="op-input"
+            type="tel"
+            dir="ltr"
+            inputMode="tel"
+            value={phone}
+            placeholder="01xxxxxxxxx"
+            autoComplete="off"
+            enterKeyHint="done"
+            aria-invalid={!phoneOk}
+            onChange={(e) => setPhone(e.target.value.replace(/[^\d+\s-]/g, ''))}
+            onKeyDown={(e) => e.key === 'Enter' && commit()}
+          />
+        </label>
+        </div>
 
         <div className="op-group" role="group" aria-label={t('op.services')}>
           <span className="op-k">
@@ -220,6 +248,21 @@ export default function Operator() {
             {!barbers.length && <p className="op-muted">{t('op.noBarbers')}</p>}
           </div>
         </div>
+
+        <div className="op-group" role="radiogroup" aria-label={t('op.payment')}>
+          <span className="op-k">
+            <Wallet size={15} aria-hidden /> {t('op.payment')}
+          </span>
+          <div className="op-chips">
+            {PAY_METHODS.map((m) => (
+              <button key={m} type="button" role="radio" className="op-chip" aria-checked={method === m} aria-pressed={method === m} onClick={() => setMethod(m)}>
+                <span className="op-chip-t">
+                  {m === 'cash' ? <Banknote size={18} aria-hidden /> : <Wallet size={18} aria-hidden />} {t(`pm.${m}`)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className={settling ? 'op-live settling' : 'op-live'} aria-label={t('op.live')}>
@@ -239,7 +282,7 @@ export default function Operator() {
           {total > 0 && <span className="op-start-sum">{money.format(total)}</span>}
         </button>
         <p className="op-hint" id="op-hint">
-          {!seat ? t('op.noSeat') : !picked.length ? t('op.pickService') : !barberId ? t('op.pickBarber') : `${typed.trim() || autoName} · ${seat ? i18n.seatName(seat) : ''}`}
+          {!seat ? t('op.noSeat') : !picked.length ? t('op.pickService') : !barberId ? t('op.pickBarber') : !phoneOk ? t('op.badPhone') : `${typed.trim() || autoName} · ${seat ? i18n.seatName(seat) : ''}`}
         </p>
 
         <div className="op-counter" role="group" aria-label={t('op.waiting')}>

@@ -125,6 +125,15 @@
   color: var(--op-accent-2);
   font-size: 14px;
 }
+/* Name and phone side by side on a tablet, stacked on a phone. */
+.op-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--op-gap);
+}
+.op .op-input[aria-invalid='true'] {
+  border-color: var(--op-accent-2);
+}
 .op-name {
   display: flex;
   flex-direction: column;
