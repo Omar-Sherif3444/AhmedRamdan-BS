@@ -106,3 +106,18 @@ export default function ShopFooter() {
     </footer>
   )
 }
+
+/** Top bar of the public page: logo, shop name and a one-tap call button. */
+export function ShopHeader() {
+  return (
+    <header className="ph" dir="rtl">
+      <div className="ph-brand">
+        <img src="/logo.png" alt="" width={40} height={40} fetchPriority="high" />
+        <span>{SALON.name}</span>
+      </div>
+      <a className="ph-call" href={`tel:${SALON.phoneIntl}`}>
+        <Phone size={16} aria-hidden /> {L.call}
+      </a>
+    </header>
+  )
+}

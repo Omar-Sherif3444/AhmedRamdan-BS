@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import ShopFooter from '../components/ShopFooter'
+import ShopFooter, { ShopHeader } from '../components/ShopFooter'
 import '../public.css'
 
 /**
@@ -235,6 +235,7 @@ export default function Public() {
 
   return (
     <>
+    <ShopHeader />
     <main className={`pw pw-${tone}${stale && !unknown ? ' pw-is-stale' : ''}`} dir="rtl">
       <section className="pw-card">
         <p className="pw-eyebrow">{L.eyebrow}</p>
