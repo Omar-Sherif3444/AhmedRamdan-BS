@@ -286,8 +286,7 @@ export default function Operator() {
         </p>
 
         <div className="op-counter" role="group" aria-label={t('op.waiting')}>
-          <Couch />
-          <button type="button" className="op-big" onClick={() => bump(1)} aria-label={t('op.walkIn')}>
+          <button type="button" className="op-big plus" onClick={() => bump(1)} aria-label={t('op.walkIn')}>
             <Plus size={40} aria-hidden strokeWidth={3} />
           </button>
           <p className="op-wait">
@@ -397,24 +396,5 @@ function LiveCard({
         <Check size={20} aria-hidden /> {t('op.done')}
       </button>
     </article>
-  )
-}
-
-/** The waiting metaphor, in SVG — the public page and this screen must never load three.js. */
-function Couch() {
-  return (
-    <svg className="op-couch" viewBox="0 0 320 160" preserveAspectRatio="xMidYMid meet" aria-hidden focusable="false">
-      {/* Symmetric on purpose: nothing here needs an RTL mirror. */}
-      <g fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round">
-        <rect x="46" y="20" width="228" height="74" rx="20" />
-        <rect x="12" y="56" width="36" height="76" rx="17" />
-        <rect x="272" y="56" width="36" height="76" rx="17" />
-        <rect x="34" y="84" width="252" height="48" rx="16" />
-      </g>
-      <g stroke="currentColor" strokeWidth="2" strokeOpacity="0.5" strokeLinecap="round">
-        <path d="M122 28v62M198 28v62M160 90v38" />
-        <path d="M30 132v16M290 132v16" />
-      </g>
-    </svg>
   )
 }

@@ -4,17 +4,20 @@
  * Sizes follow the DESIGN.md table: chips 64 px, rows 64 px, waiting +/- 88 px with a 28 px gap.
  */
 .op {
-  --op-bg: #fff;
-  --op-surface: #fafaf9;
+  --op-bg: #eef0f3; /* canvas: panels sit on it as white cards */
+  --op-surface: #fff;
   --op-surface-2: #fff;
-  --op-surface-3: #f0eeeb;
-  --op-line: #d6d3d1;
-  --op-ink: #1c1917;
-  --op-ink-2: #57534e;
-  --op-accent: #c0172a;
+  --op-surface-3: #e5e7eb;
+  --op-chip-bg: #f3f4f6;
+  --op-line: #d1d5db;
+  --op-ink: #111827; /* 17:1 on white */
+  --op-ink-2: #4b5563; /* 7.6:1 on white */
+  --op-sel: #111827; /* selected chip: the strongest contrast on the screen */
+  --op-accent: #c0172a; /* the one red: Start */
   --op-accent-2: #c0172a;
   --op-on-accent: #fff;
   --op-ok: #15803d;
+  --op-shadow: 0 1px 2px rgb(17 24 39 / 6%), 0 4px 14px rgb(17 24 39 / 6%);
   --op-gap: 12px;
   --op-chip: 64px;
   --op-row: 64px;
@@ -68,8 +71,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  color: var(--op-ink-2);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--op-ink);
   line-height: 1.4;
 }
 .op-muted {
@@ -91,11 +95,12 @@
 .op-entry {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   background: var(--op-surface);
   border: 1px solid var(--op-line);
   border-radius: var(--op-r);
-  padding: 12px;
+  box-shadow: var(--op-shadow);
+  padding: 16px;
 }
 .op-entry-head {
   display: flex;
@@ -111,7 +116,8 @@
   padding-inline: 14px;
   border: 1px solid var(--op-line);
   border-radius: 999px;
-  background: var(--op-surface-2);
+  background: var(--op-chip-bg);
+  color: var(--op-ink);
 }
 .op-seat-k {
   font-size: 14px;
@@ -175,7 +181,7 @@
 /* An even grid: every chip the same width, no lone chip on a ragged last row. */
 .op-chips {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
   gap: 10px;
 }
 .op-chip {
@@ -186,9 +192,10 @@
   gap: 2px;
   min-block-size: var(--op-chip);
   min-inline-size: 0;
-  padding-inline: 12px;
-  background: var(--op-surface-2);
-  border: 1px solid var(--op-line);
+  padding-inline: 10px;
+  background: var(--op-chip-bg);
+  border: 1.5px solid var(--op-line);
+  color: var(--op-ink);
   border-radius: var(--op-r);
   text-align: center;
   transition:
@@ -197,14 +204,16 @@
 }
 .op-chip:hover:not([aria-pressed='true']) {
   border-color: var(--op-ink-2);
+  background: #e5e7eb;
 }
 .op-chip-t {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   line-height: 1.3;
+  white-space: nowrap;
 }
 .op-chip-s {
   font-size: 14px;
@@ -212,13 +221,13 @@
   font-variant-numeric: tabular-nums;
 }
 .op-chip[aria-pressed='true'] {
-  background: var(--op-accent);
-  border-color: var(--op-accent-2);
-  color: var(--op-on-accent);
-  box-shadow: 0 4px 12px rgb(192 23 42 / 25%);
+  background: var(--op-sel);
+  border-color: var(--op-sel);
+  color: #fff;
+  box-shadow: 0 4px 12px rgb(17 24 39 / 25%);
 }
 .op-chip[aria-pressed='true'] .op-chip-s {
-  color: #fee2e2;
+  color: #d1d5db;
 }
 
 /* ---------- In-progress cards ---------- */
@@ -242,6 +251,7 @@
   background: var(--op-surface);
   border: 1px solid var(--op-line);
   border-radius: var(--op-r);
+  box-shadow: var(--op-shadow);
 }
 .op-card.busy {
   opacity: 0.5;
@@ -288,11 +298,12 @@
   min-inline-size: 88px;
   padding-inline: 12px;
   margin-inline-start: auto;
-  background: var(--op-surface-2);
-  border: 1px dashed var(--op-line);
+  background: var(--op-chip-bg);
+  border: 1.5px dashed #9ca3af;
   border-radius: 12px;
   font-variant-numeric: tabular-nums;
   font-size: 16px;
+  font-weight: 600;
 }
 .op-pay {
   display: flex;
@@ -353,10 +364,10 @@
   margin-block-start: auto;
   padding: 10px;
   padding-block-end: calc(10px + env(safe-area-inset-bottom, 0px));
-  background: color-mix(in srgb, var(--op-bg) 88%, transparent);
-  backdrop-filter: blur(10px);
+  background: var(--op-surface);
   border: 1px solid var(--op-line);
   border-radius: 16px;
+  box-shadow: var(--op-shadow);
 }
 .op-start {
   display: flex;
@@ -386,27 +397,18 @@
 .op-hint {
   margin: 0;
   min-block-size: 1.5em;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
   color: var(--op-ink-2);
   text-align: center;
 }
 .op-counter {
-  position: relative;
-  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 28px; /* >= 24 pt between the two big targets */
-  padding-block: 10px;
-}
-.op-couch {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  inline-size: 100%;
-  block-size: 100%;
-  color: #a8a29e;
-  opacity: 0.45;
+  padding-block: 14px 6px;
+  border-block-start: 1px solid var(--op-line);
 }
 .op-big {
   display: inline-flex;
@@ -416,8 +418,14 @@
   block-size: var(--op-big);
   flex: 0 0 auto;
   border-radius: 50%;
-  background: var(--op-surface-3);
-  border: 2px solid var(--op-line);
+  background: var(--op-surface);
+  border: 2px solid var(--op-ink);
+  color: var(--op-ink);
+}
+/* + (someone walked in) is the frequent tap: filled. */
+.op-big.plus {
+  background: var(--op-ink);
+  color: #fff;
 }
 .op-big:active:not(:disabled) {
   background: var(--op-accent);
@@ -430,10 +438,6 @@
   flex-direction: column;
   align-items: center;
   min-inline-size: 4ch;
-  padding-block: 4px;
-  padding-inline: 12px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--op-bg) 85%, transparent);
 }
 .op-wait-n {
   font-size: clamp(48px, 15vw, 76px);
@@ -482,10 +486,11 @@
   min-inline-size: 96px;
   justify-content: center;
   padding-inline: 14px;
-  background: var(--op-surface-2);
-  border: 1px solid var(--op-line);
+  background: #fff;
+  border: 1px solid #fff;
   border-radius: 12px;
-  font-weight: 600;
+  color: #111827;
+  font-weight: 700;
 }
 
 /* ---------- Tablet: the bottom edge is hostile territory, so the dock becomes a side rail
