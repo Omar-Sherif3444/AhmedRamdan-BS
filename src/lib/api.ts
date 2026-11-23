@@ -108,6 +108,30 @@ export async function revenueTotals(r: DateRange) {
   return { cash: Number(x.cash ?? 0), wallet: Number(x.wallet ?? 0), other: Number(x.other ?? 0), total: Number(x.total ?? 0), visits: Number(x.visits ?? 0) }
 }
 
+export interface DayTotal {
+  day: string // yyyy-mm-dd, Cairo calendar day
+  income: number
+  cash: number
+  wallet: number
+  expenses: number
+  net: number
+  visits: number
+}
+
+/** Income minus expenses per day, newest first, summed on the server (owner and shop account). */
+export async function dailyTotals(days = 30): Promise<DayTotal[]> {
+  const rows = (await rpc('daily_totals', { p_days: days })) as Row[]
+  return rows.map((r) => ({
+    day: r.day,
+    income: Number(r.income),
+    cash: Number(r.cash),
+    wallet: Number(r.wallet),
+    expenses: Number(r.expenses),
+    net: Number(r.net),
+    visits: Number(r.visits),
+  }))
+}
+
 /** Monthly payroll calculated on the server. month: yyyy-mm-01. */
 export async function fetchPayroll(month: string): Promise<PayrollRow[]> {
   const rows = (await rpc('payroll', { p_month: month })) as Row[]

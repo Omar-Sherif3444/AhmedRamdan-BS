@@ -544,11 +544,16 @@
 .op-main {
   padding-block-end: 96px; /* the button never covers the last row */
 }
-.op-fab {
+.op-fabs {
   position: fixed;
   inset-block-end: calc(20px + env(safe-area-inset-bottom, 0px));
   inset-inline-end: 20px;
   z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.op-fab {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -571,4 +576,12 @@
 .op-fab:focus-visible {
   outline: 3px solid #111827;
   outline-offset: 3px;
+}
+.op-fab.alt {
+  background: #fff;
+  color: #111827;
+  border: 1.5px solid #111827;
+}
+.op-fab.alt:hover {
+  background: #f3f4f6;
 }

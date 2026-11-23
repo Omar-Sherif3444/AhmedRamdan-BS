@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { Armchair, Bell, ReceiptText, CalendarX, ChartColumn, HandCoins, LayoutDashboard, Lock, LogOut, Menu, Receipt, Settings as SettingsIcon, UserCog, Users, Wallet, X } from 'lucide-react'
+import { Armchair, Bell, Calculator, ReceiptText, CalendarX, ChartColumn, HandCoins, LayoutDashboard, Lock, LogOut, Menu, Receipt, Settings as SettingsIcon, UserCog, Users, Wallet, X } from 'lucide-react'
 import { useStore } from './store'
 import { Modal, initials } from './components/ui'
 import SignIn from './pages/SignIn'
@@ -9,6 +9,7 @@ import type { Key } from './i18n'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 import Operator from './pages/Operator'
 import { ExpenseForm } from './pages/Expenses'
+import DailyTotals from './components/DailyTotals'
 import Customers from './pages/Customers'
 import Transactions from './pages/Transactions'
 import Employees from './pages/Employees'
@@ -78,6 +79,7 @@ function OperatorApp() {
   const { i18n } = useStore()
   const { t } = i18n
   const [expense, setExpense] = useState(false)
+  const [totals, setTotals] = useState(false)
   return (
     <div className="public">
       <header className="topbar">
@@ -98,11 +100,19 @@ function OperatorApp() {
       <main id="main" className="op-main">
         <Operator />
       </main>
-      <button type="button" className="op-fab" onClick={() => setExpense(true)}>
-        <ReceiptText size={20} aria-hidden /> {t('ex.add')}
-      </button>
+      <div className="op-fabs">
+        <button type="button" className="op-fab" onClick={() => setExpense(true)}>
+          <ReceiptText size={20} aria-hidden /> {t('ex.add')}
+        </button>
+        <button type="button" className="op-fab alt" onClick={() => setTotals(true)}>
+          <Calculator size={20} aria-hidden /> {t('dt.title')}
+        </button>
+      </div>
       <Modal open={expense} onClose={() => setExpense(false)} title={t('ex.add')}>
         {expense && <ExpenseForm isOwner={false} counter onDone={() => setExpense(false)} />}
+      </Modal>
+      <Modal open={totals} onClose={() => setTotals(false)} title={t('dt.title')} wide>
+        {totals && <DailyTotals />}
       </Modal>
     </div>
   )
